@@ -1,10 +1,18 @@
 use crate::config::load_config;
 use serde_json::Value;
 
+pub fn build_client() -> reqwest::Client {
+    let insecure = std::env::var("CSFX_INSECURE").as_deref() == Ok("true");
+    reqwest::Client::builder()
+        .danger_accept_invalid_certs(insecure)
+        .build()
+        .expect("failed to build HTTP client")
+}
+
 pub fn auth() -> Result<(reqwest::Client, String, String), Box<dyn std::error::Error>> {
     let config = load_config().ok_or("not authenticated, run: csf login")?;
     let token = config.token.ok_or("not authenticated, run: csf login")?;
-    Ok((reqwest::Client::new(), config.server, token))
+    Ok((build_client(), config.server, token))
 }
 
 pub fn base_url(server: &str) -> String {
