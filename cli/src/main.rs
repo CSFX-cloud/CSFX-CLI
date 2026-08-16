@@ -1,3 +1,4 @@
+mod buckets;
 mod config;
 mod display;
 mod events;
@@ -33,6 +34,8 @@ enum Commands {
     Token,
     #[command(subcommand, about = "Manage storage volumes")]
     Volumes(volumes::VolumeCommands),
+    #[command(subcommand, about = "Manage S3 object storage buckets")]
+    Buckets(buckets::BucketCommands),
     #[command(subcommand, about = "View registry and agents")]
     Registry(registry::RegistryCommands),
     #[command(subcommand, about = "View cluster nodes and metrics")]
@@ -65,6 +68,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Status) => user::status::status().await?,
         Some(Commands::Token) => user::token::token().await?,
         Some(Commands::Volumes(cmd)) => volumes::run(cmd).await?,
+        Some(Commands::Buckets(cmd)) => buckets::run(cmd).await?,
         Some(Commands::Registry(cmd)) => registry::run(cmd).await?,
         Some(Commands::Nodes(cmd)) => nodes::run(cmd).await?,
         Some(Commands::Workloads(cmd)) => workloads::run(cmd).await?,
