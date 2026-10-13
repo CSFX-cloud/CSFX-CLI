@@ -20,6 +20,7 @@ use crate::workloads::WorkloadCommands;
 
 const COMMANDS: &[(&str, &str)] = &[
     ("login", "authenticate with the server"),
+    ("setup", "initialize a fresh cluster"),
     ("logout", "clear authentication token"),
     ("status", "show session and user info"),
     ("volumes list", "list all volumes"),
@@ -74,6 +75,9 @@ const COMMANDS: &[(&str, &str)] = &[
     ("tenant roles", "list available roles"),
     ("tenant set-role --user <id> --role <role-id>", "assign a role to a user"),
     ("ssh connect <node>", "open ssh session to a cluster node"),
+    ("ssh enable [--hours <n> | --unlimited]", "allow ssh access on all nodes"),
+    ("ssh disable", "close ssh access on all nodes"),
+    ("ssh status", "show whether ssh access is open"),
     ("clear", "clear the terminal screen"),
     ("help", "show available commands"),
     ("exit", "exit the shell"),
@@ -131,7 +135,7 @@ fn print_help() {
     display::section("Commands");
 
     let groups: &[(&str, &[&str])] = &[
-        ("Auth", &["login", "logout", "status"]),
+        ("Auth", &["login", "setup", "logout", "status"]),
         (
             "Volumes",
             &[
@@ -218,7 +222,15 @@ fn print_help() {
                 "tenant set-role --user <id> --role <role-id>",
             ],
         ),
-        ("SSH", &["ssh connect <node>"]),
+        (
+            "SSH",
+            &[
+                "ssh connect <node>",
+                "ssh enable [--hours <n> | --unlimited]",
+                "ssh disable",
+                "ssh status",
+            ],
+        ),
         ("Shell", &["clear", "help", "exit"]),
     ];
 
@@ -244,6 +256,8 @@ fn parse_flag<'a>(parts: &[&'a str], flag: &str) -> Option<&'a str> {
 async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     match parts {
         ["login"] => crate::user::login::login().await?,
+        ["setup"] => crate::user::setup::setup(None).await?,
+        ["setup", server] => crate::user::setup::setup(Some(server.to_string())).await?,
         ["logout"] => crate::user::logout::logout().await?,
         ["status"] => crate::user::status::status().await?,
 
@@ -500,6 +514,29 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
             })
             .await?
         }
+        ["ssh", "enable", "--unlimited"] => {
+            crate::ssh::run(SshCommands::Enable {
+                hours: None,
+                unlimited: true,
+            })
+            .await?
+        }
+        ["ssh", "enable", "--hours", hours] => {
+            crate::ssh::run(SshCommands::Enable {
+                hours: hours.parse().ok(),
+                unlimited: false,
+            })
+            .await?
+        }
+        ["ssh", "enable"] => {
+            crate::ssh::run(SshCommands::Enable {
+                hours: None,
+                unlimited: false,
+            })
+            .await?
+        }
+        ["ssh", "disable"] => crate::ssh::run(SshCommands::Disable).await?,
+        ["ssh", "status"] => crate::ssh::run(SshCommands::Status).await?,
         ["ssh", "connect", node, "--port", port] => {
             crate::ssh::run(SshCommands::Connect {
                 node: node.to_string(),

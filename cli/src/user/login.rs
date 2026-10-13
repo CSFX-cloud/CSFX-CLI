@@ -1,6 +1,5 @@
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use dialoguer::{Input, Password};
-use reqwest;
 use rsa::pkcs1::DecodeRsaPublicKey;
 use rsa::{Oaep, RsaPublicKey};
 use serde::{Deserialize, Serialize};
@@ -36,8 +35,8 @@ struct ChangePasswordRequest {
     new_password: String,
 }
 
-async fn get_public_key(server: &str) -> Result<RsaPublicKey, Box<dyn std::error::Error>> {
-    let client = reqwest::Client::new();
+pub(crate) async fn get_public_key(server: &str) -> Result<RsaPublicKey, Box<dyn std::error::Error>> {
+    let client = crate::http::build_client();
     let url = format!("{}/api/public-key", server.trim_end_matches('/'));
 
     let response = client
@@ -57,7 +56,7 @@ async fn get_public_key(server: &str) -> Result<RsaPublicKey, Box<dyn std::error
     Ok(public_key)
 }
 
-fn encrypt_password(
+pub(crate) fn encrypt_password(
     password: &str,
     public_key: &RsaPublicKey,
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -91,7 +90,7 @@ async fn change_password(
     let encrypted_old = encrypt_password(old_password_plain, public_key)?;
     let encrypted_new = encrypt_password(&new_password, public_key)?;
 
-    let client = reqwest::Client::new();
+    let client = crate::http::build_client();
     let url = format!("{}/api/change-password", server.trim_end_matches('/'));
 
     let response = client
@@ -146,7 +145,7 @@ pub async fn login() -> Result<(), Box<dyn std::error::Error>> {
 
     let pb = display::spinner("authenticating...");
 
-    let client = reqwest::Client::new();
+    let client = crate::http::build_client();
     let login_url = format!("{}/api/login", server.trim_end_matches('/'));
 
     let response = client

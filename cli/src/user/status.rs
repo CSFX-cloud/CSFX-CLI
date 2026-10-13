@@ -61,7 +61,7 @@ pub async fn status() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         Ok(resp) => {
                             display::warn(&format!(
-                                "token may be expired ({}), run: csf login",
+                                "token may be expired ({}), run: csfx login",
                                 resp.status()
                             ));
                         }
@@ -72,12 +72,12 @@ pub async fn status() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 None => {
                     kv_colored("Status", "not authenticated", Color::Red);
-                    display::info("run: csf login");
+                    display::info("run: csfx login");
                 }
             }
         }
         None => {
-            display::warn("no configuration found, run: csf login");
+            display::warn("no configuration found, run: csfx login");
         }
     }
 

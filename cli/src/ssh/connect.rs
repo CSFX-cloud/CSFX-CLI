@@ -1,4 +1,5 @@
 use crate::display;
+use crate::ssh::access;
 use crate::http::{auth, base_url, get_json};
 use chrono::{Duration, Utc};
 use serde::Deserialize;
@@ -19,21 +20,22 @@ struct AgentInfo {
 }
 
 #[derive(Deserialize)]
-struct UserProfile {
-    username: String,
-}
-
-#[derive(Deserialize)]
 struct SshKeyRecord {
     id: String,
 }
+
+const SSH_LOGIN_USER: &str = "csfx";
 
 pub async fn run(node: String, port: u16) -> Result<(), Box<dyn std::error::Error>> {
     let (client, server, token) = auth()?;
     let base = base_url(&server);
 
+    if !access::fetch(&client, &base, &token).await?.effective {
+        return Err("ssh access is disabled, enable it with: csfx ssh enable".into());
+    }
+
     let target_ip = resolve_node(&client, &base, &token, &node).await?;
-    let username = fetch_username(&client, &server, &token).await?;
+    let username = SSH_LOGIN_USER;
 
     let tempdir = TempDir::new()?;
     let private_key_path = tempdir.path().join("id_ed25519");
@@ -119,26 +121,6 @@ async fn resolve_node(
         .filter(|ip| !ip.is_empty())
         .or_else(|| Some(agent.hostname.clone()))
         .ok_or_else(|| "node has no reachable address".into())
-}
-
-async fn fetch_username(
-    client: &reqwest::Client,
-    server: &str,
-    token: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
-    let url = format!("{}/api/profile", server.trim_end_matches('/'));
-    let resp = client
-        .get(&url)
-        .header("Authorization", format!("Bearer {}", token))
-        .send()
-        .await?;
-
-    if !resp.status().is_success() {
-        return Err(format!("failed to fetch user profile: {}", resp.status()).into());
-    }
-
-    let profile: UserProfile = resp.json().await?;
-    Ok(profile.username)
 }
 
 async fn register_key(
