@@ -35,7 +35,7 @@ struct ChangePasswordRequest {
     new_password: String,
 }
 
-async fn get_public_key(server: &str) -> Result<RsaPublicKey, Box<dyn std::error::Error>> {
+pub(crate) async fn get_public_key(server: &str) -> Result<RsaPublicKey, Box<dyn std::error::Error>> {
     let client = crate::http::build_client();
     let url = format!("{}/api/public-key", server.trim_end_matches('/'));
 
@@ -56,7 +56,7 @@ async fn get_public_key(server: &str) -> Result<RsaPublicKey, Box<dyn std::error
     Ok(public_key)
 }
 
-fn encrypt_password(
+pub(crate) fn encrypt_password(
     password: &str,
     public_key: &RsaPublicKey,
 ) -> Result<String, Box<dyn std::error::Error>> {
