@@ -9,6 +9,7 @@ use std::borrow::Cow;
 
 use crate::display;
 use crate::events::EventCommands;
+use crate::ingress::IngressCommands;
 use crate::networks::NetworkCommands;
 use crate::nodes::NodeCommands;
 use crate::registry::RegistryCommands;
@@ -166,6 +167,11 @@ fn print_help() {
             &[
                 "nodes list",
                 "nodes get <id>",
+                "nodes join-token [worker|master]",
+                "nodes cordon <id>",
+                "nodes uncordon <id>",
+                "nodes drain <id>",
+                "nodes remove <id>",
                 "nodes metrics",
                 "nodes metrics --watch",
                 "nodes agent-metrics <id>",
@@ -196,6 +202,14 @@ fn print_help() {
             ],
         ),
         ("Events", &["events list"]),
+        (
+            "Ingress",
+            &[
+                "ingress list <resource-group>",
+                "ingress add <resource-group> <hostname> <workload> <port>",
+                "ingress delete <resource-group> <id>",
+            ],
+        ),
         (
             "Networks",
             &[
@@ -341,6 +355,24 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
         ["nodes", "get", id] => {
             crate::nodes::run(NodeCommands::Get { id: id.to_string() }).await?
         }
+        ["nodes", "join-token"] => {
+            crate::nodes::run(NodeCommands::JoinToken { role: "worker".to_string(), ttl: 1 }).await?
+        }
+        ["nodes", "join-token", role @ ("worker" | "master")] => {
+            crate::nodes::run(NodeCommands::JoinToken { role: role.to_string(), ttl: 1 }).await?
+        }
+        ["nodes", "cordon", id] => {
+            crate::nodes::run(NodeCommands::Cordon { id: id.to_string() }).await?
+        }
+        ["nodes", "uncordon", id] => {
+            crate::nodes::run(NodeCommands::Uncordon { id: id.to_string() }).await?
+        }
+        ["nodes", "drain", id] => {
+            crate::nodes::run(NodeCommands::Drain { id: id.to_string() }).await?
+        }
+        ["nodes", "remove", id] => {
+            crate::nodes::run(NodeCommands::Remove { id: id.to_string() }).await?
+        }
         ["nodes", "metrics"] => {
             crate::nodes::run(NodeCommands::Metrics { watch: false }).await?
         }
@@ -414,6 +446,30 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         ["events", "list"] => crate::events::run(EventCommands::List).await?,
+
+        ["ingress", "list", group] => {
+            crate::ingress::run(IngressCommands::List {
+                resource_group: group.to_string(),
+            })
+            .await?
+        }
+        ["ingress", "add", group, hostname, workload, port] => {
+            crate::ingress::run(IngressCommands::Add {
+                resource_group: group.to_string(),
+                hostname: hostname.to_string(),
+                workload: workload.to_string(),
+                port: port.parse()?,
+                no_tls: false,
+            })
+            .await?
+        }
+        ["ingress", "delete", group, id] => {
+            crate::ingress::run(IngressCommands::Delete {
+                resource_group: group.to_string(),
+                id: id.to_string(),
+            })
+            .await?
+        }
 
         ["networks", "list"] => crate::networks::run(NetworkCommands::List).await?,
         ["networks", "get", id] => {

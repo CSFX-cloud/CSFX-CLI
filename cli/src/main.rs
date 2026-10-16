@@ -3,6 +3,7 @@ mod config;
 mod display;
 mod events;
 mod http;
+mod ingress;
 mod networks;
 mod nodes;
 mod registry;
@@ -49,6 +50,8 @@ enum Commands {
     Workloads(workloads::WorkloadCommands),
     #[command(subcommand, about = "View failover and audit events")]
     Events(events::EventCommands),
+    #[command(subcommand, about = "Publish workloads under hostnames")]
+    Ingress(ingress::IngressCommands),
     #[command(subcommand, about = "Manage overlay networks")]
     Networks(networks::NetworkCommands),
     #[command(subcommand, about = "Manage tenant organization, users and roles")]
@@ -79,6 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Nodes(cmd)) => nodes::run(cmd).await?,
         Some(Commands::Workloads(cmd)) => workloads::run(cmd).await?,
         Some(Commands::Events(cmd)) => events::run(cmd).await?,
+        Some(Commands::Ingress(cmd)) => ingress::run(cmd).await?,
         Some(Commands::Networks(cmd)) => networks::run(cmd).await?,
         Some(Commands::Tenant(cmd)) => tenant::run(cmd).await?,
         Some(Commands::System(cmd)) => system::run(cmd).await?,
