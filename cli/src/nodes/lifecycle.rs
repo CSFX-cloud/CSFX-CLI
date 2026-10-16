@@ -11,10 +11,10 @@ struct JoinToken {
     expires_at: String,
 }
 
-pub async fn join_token(ttl_hours: i64) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn join_token(role: String, ttl_hours: i64) -> Result<(), Box<dyn std::error::Error>> {
     let (client, server, token) = auth()?;
     let url = format!("{}/cluster/join-tokens", base_url(&server));
-    let body = json!({ "ttl_hours": ttl_hours });
+    let body = json!({ "role": role, "ttl_hours": ttl_hours });
 
     let pb = display::spinner("creating join token...");
     let data = post_json(&client, &url, &token, &body).await;
