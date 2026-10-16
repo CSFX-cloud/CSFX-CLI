@@ -166,6 +166,11 @@ fn print_help() {
             &[
                 "nodes list",
                 "nodes get <id>",
+                "nodes join-token [worker|master]",
+                "nodes cordon <id>",
+                "nodes uncordon <id>",
+                "nodes drain <id>",
+                "nodes remove <id>",
                 "nodes metrics",
                 "nodes metrics --watch",
                 "nodes agent-metrics <id>",
@@ -340,6 +345,32 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
         ["nodes", "list"] => crate::nodes::run(NodeCommands::List).await?,
         ["nodes", "get", id] => {
             crate::nodes::run(NodeCommands::Get { id: id.to_string() }).await?
+        }
+        ["nodes", "join-token"] => {
+            crate::nodes::run(NodeCommands::JoinToken {
+                role: "worker".to_string(),
+                ttl: 1,
+            })
+            .await?
+        }
+        ["nodes", "join-token", role] => {
+            crate::nodes::run(NodeCommands::JoinToken {
+                role: role.to_string(),
+                ttl: 1,
+            })
+            .await?
+        }
+        ["nodes", "cordon", id] => {
+            crate::nodes::run(NodeCommands::Cordon { id: id.to_string() }).await?
+        }
+        ["nodes", "uncordon", id] => {
+            crate::nodes::run(NodeCommands::Uncordon { id: id.to_string() }).await?
+        }
+        ["nodes", "drain", id] => {
+            crate::nodes::run(NodeCommands::Drain { id: id.to_string() }).await?
+        }
+        ["nodes", "remove", id] => {
+            crate::nodes::run(NodeCommands::Remove { id: id.to_string() }).await?
         }
         ["nodes", "metrics"] => {
             crate::nodes::run(NodeCommands::Metrics { watch: false }).await?
