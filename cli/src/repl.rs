@@ -9,6 +9,7 @@ use std::borrow::Cow;
 
 use crate::display;
 use crate::events::EventCommands;
+use crate::ingress::IngressCommands;
 use crate::networks::NetworkCommands;
 use crate::nodes::NodeCommands;
 use crate::registry::RegistryCommands;
@@ -201,6 +202,14 @@ fn print_help() {
             ],
         ),
         ("Events", &["events list"]),
+        (
+            "Ingress",
+            &[
+                "ingress list <resource-group>",
+                "ingress add <resource-group> <hostname> <workload> <port>",
+                "ingress delete <resource-group> <id>",
+            ],
+        ),
         (
             "Networks",
             &[
@@ -437,6 +446,30 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         ["events", "list"] => crate::events::run(EventCommands::List).await?,
+
+        ["ingress", "list", group] => {
+            crate::ingress::run(IngressCommands::List {
+                resource_group: group.to_string(),
+            })
+            .await?
+        }
+        ["ingress", "add", group, hostname, workload, port] => {
+            crate::ingress::run(IngressCommands::Add {
+                resource_group: group.to_string(),
+                hostname: hostname.to_string(),
+                workload: workload.to_string(),
+                port: port.parse()?,
+                no_tls: false,
+            })
+            .await?
+        }
+        ["ingress", "delete", group, id] => {
+            crate::ingress::run(IngressCommands::Delete {
+                resource_group: group.to_string(),
+                id: id.to_string(),
+            })
+            .await?
+        }
 
         ["networks", "list"] => crate::networks::run(NetworkCommands::List).await?,
         ["networks", "get", id] => {
