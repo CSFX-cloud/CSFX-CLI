@@ -166,7 +166,7 @@ fn print_help() {
             &[
                 "nodes list",
                 "nodes get <id>",
-                "nodes join-token [worker|master]",
+                "nodes join-token",
                 "nodes cordon <id>",
                 "nodes uncordon <id>",
                 "nodes drain <id>",
@@ -347,18 +347,7 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
             crate::nodes::run(NodeCommands::Get { id: id.to_string() }).await?
         }
         ["nodes", "join-token"] => {
-            crate::nodes::run(NodeCommands::JoinToken {
-                role: "worker".to_string(),
-                ttl: 1,
-            })
-            .await?
-        }
-        ["nodes", "join-token", role] => {
-            crate::nodes::run(NodeCommands::JoinToken {
-                role: role.to_string(),
-                ttl: 1,
-            })
-            .await?
+            crate::nodes::run(NodeCommands::JoinToken { ttl: 1 }).await?
         }
         ["nodes", "cordon", id] => {
             crate::nodes::run(NodeCommands::Cordon { id: id.to_string() }).await?
