@@ -9,6 +9,8 @@ use std::borrow::Cow;
 
 use crate::display;
 use crate::events::EventCommands;
+use crate::dns::{DnsCommands, RecordCommands};
+use crate::gateway::GatewayCommands;
 use crate::ingress::IngressCommands;
 use crate::networks::NetworkCommands;
 use crate::nodes::NodeCommands;
@@ -203,11 +205,29 @@ fn print_help() {
         ),
         ("Events", &["events list"]),
         (
+            "Gateways",
+            &[
+                "gateway list <resource-group>",
+                "gateway create <resource-group> <name> [--http-port <port>] [--https-port <port>]",
+                "gateway delete <resource-group> <id>",
+            ],
+        ),
+        (
             "Ingress",
             &[
                 "ingress list <resource-group>",
-                "ingress add <resource-group> <hostname> <workload> <port>",
+                "ingress add <resource-group> <hostname> <workload> <port> --gateway <id>",
                 "ingress delete <resource-group> <id>",
+            ],
+        ),
+        (
+            "DNS",
+            &[
+                "dns zone",
+                "dns trust",
+                "dns record list <resource-group>",
+                "dns record add <resource-group> <name> <A|CNAME> <value> [--ttl <seconds>]",
+                "dns record delete <resource-group> <id>",
             ],
         ),
         (
@@ -453,12 +473,14 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
             })
             .await?
         }
-        ["ingress", "add", group, hostname, workload, port] => {
+        ["ingress", "add", group, hostname, workload, port, ..] => {
+            let gateway = parse_flag(parts, "--gateway").ok_or("missing --gateway <id>")?;
             crate::ingress::run(IngressCommands::Add {
                 resource_group: group.to_string(),
                 hostname: hostname.to_string(),
                 workload: workload.to_string(),
                 port: port.parse()?,
+                gateway: gateway.to_string(),
                 no_tls: false,
             })
             .await?
@@ -468,6 +490,55 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
                 resource_group: group.to_string(),
                 id: id.to_string(),
             })
+            .await?
+        }
+
+        ["gateway", "list", group] => {
+            crate::gateway::run(GatewayCommands::List {
+                resource_group: group.to_string(),
+            })
+            .await?
+        }
+        ["gateway", "create", group, name, ..] => {
+            crate::gateway::run(GatewayCommands::Create {
+                resource_group: group.to_string(),
+                name: name.to_string(),
+                http_port: parse_flag(parts, "--http-port").map_or(Ok(80), str::parse)?,
+                https_port: parse_flag(parts, "--https-port").map_or(Ok(443), str::parse)?,
+            })
+            .await?
+        }
+        ["gateway", "delete", group, id] => {
+            crate::gateway::run(GatewayCommands::Delete {
+                resource_group: group.to_string(),
+                id: id.to_string(),
+            })
+            .await?
+        }
+
+        ["dns", "zone"] => crate::dns::run(DnsCommands::Zone).await?,
+        ["dns", "trust"] => crate::dns::run(DnsCommands::Trust).await?,
+        ["dns", "record", "list", group] => {
+            crate::dns::run(DnsCommands::Record(RecordCommands::List {
+                resource_group: group.to_string(),
+            }))
+            .await?
+        }
+        ["dns", "record", "add", group, name, record_type, value, ..] => {
+            crate::dns::run(DnsCommands::Record(RecordCommands::Add {
+                resource_group: group.to_string(),
+                name: name.to_string(),
+                record_type: record_type.to_string(),
+                value: value.to_string(),
+                ttl: parse_flag(parts, "--ttl").map(str::parse).transpose()?,
+            }))
+            .await?
+        }
+        ["dns", "record", "delete", group, id] => {
+            crate::dns::run(DnsCommands::Record(RecordCommands::Delete {
+                resource_group: group.to_string(),
+                id: id.to_string(),
+            }))
             .await?
         }
 

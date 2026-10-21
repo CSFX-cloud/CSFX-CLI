@@ -7,6 +7,7 @@ struct Route {
     id: String,
     hostname: String,
     workload_id: String,
+    gateway_id: Option<String>,
     container_port: u16,
     tls: bool,
 }
@@ -32,11 +33,15 @@ pub async fn run(resource_group: &str) -> Result<(), Box<dyn std::error::Error>>
         return Ok(());
     }
 
-    let mut table = Table::new(vec!["ID", "HOSTNAME", "WORKLOAD", "PORT", "TLS"]);
+    let mut table = Table::new(vec!["ID", "HOSTNAME", "GATEWAY", "WORKLOAD", "PORT", "TLS"]);
     for route in &routes {
         table.add_row(vec![
             route.id.clone(),
             route.hostname.clone(),
+            route
+                .gateway_id
+                .clone()
+                .unwrap_or_else(|| "none".to_string()),
             route.workload_id.clone(),
             route.container_port.to_string(),
             if route.tls { "yes" } else { "no" }.to_string(),
