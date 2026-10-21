@@ -6,6 +6,7 @@ use serde::Deserialize;
 struct Zone {
     zone: String,
     servers: Vec<String>,
+    console_host: String,
 }
 
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,6 +22,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     display::section("DNS  /  Platform Zone");
     kv("Zone", &zone.zone);
     kv("Servers", &zone.servers.join(", "));
+    kv("Console", &format!("https://{}:8000", zone.console_host));
     println!();
     print_resolver_hint(&zone);
 
