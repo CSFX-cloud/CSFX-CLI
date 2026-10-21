@@ -16,6 +16,8 @@ pub enum IngressCommands {
         workload: String,
         #[arg(long)]
         port: u16,
+        #[arg(long, help = "Gateway that serves the hostname")]
+        gateway: String,
         #[arg(long)]
         no_tls: bool,
     },
@@ -33,10 +35,19 @@ pub async fn run(cmd: IngressCommands) -> Result<(), Box<dyn std::error::Error>>
             hostname,
             workload,
             port,
+            gateway,
             no_tls,
-        } => add::run(&resource_group, &hostname, &workload, port, !no_tls).await,
-        IngressCommands::Delete { resource_group, id } => {
-            delete::run(&resource_group, &id).await
+        } => {
+            add::run(
+                &resource_group,
+                &hostname,
+                &workload,
+                port,
+                &gateway,
+                !no_tls,
+            )
+            .await
         }
+        IngressCommands::Delete { resource_group, id } => delete::run(&resource_group, &id).await,
     }
 }

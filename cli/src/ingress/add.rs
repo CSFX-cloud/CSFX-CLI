@@ -16,6 +16,7 @@ pub async fn run(
     hostname: &str,
     workload: &str,
     port: u16,
+    gateway: &str,
     tls: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let (client, server, token) = auth()?;
@@ -26,6 +27,7 @@ pub async fn run(
     );
     let body = json!({
         "hostname": hostname,
+        "gateway_id": gateway,
         "workload_id": workload,
         "container_port": port,
         "tls": tls,
@@ -43,7 +45,8 @@ pub async fn run(
     kv("Port", &route.container_port.to_string());
     kv("TLS", if route.tls { "yes" } else { "no" });
     println!();
-    display::info("point the DNS record at the cluster address, the proxy picks the route up within ten seconds");
+    display::info("hostnames inside the platform zone resolve automatically, see: csfx dns zone");
+    display::info("for other hostnames point your DNS record at the agent that runs the gateway");
 
     Ok(())
 }
