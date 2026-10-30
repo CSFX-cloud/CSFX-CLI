@@ -46,7 +46,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     for a in &agents {
         table.add_row(vec![
-            a.id[..8].to_string(),
+            a.id.clone(),
             a.hostname.clone(),
             a.ip_address.clone().unwrap_or_else(|| "-".to_string()),
             format!("{} {}", a.os_type, a.os_version),
