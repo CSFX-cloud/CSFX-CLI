@@ -28,15 +28,14 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let mut table = Table::new(vec!["ID", "NAME", "EXPOSURE", "QUOTA", "STATUS"]).with_color(
-        |col, val| {
+    let mut table =
+        Table::new(vec!["ID", "NAME", "EXPOSURE", "QUOTA", "STATUS"]).with_color(|col, val| {
             if col == 4 {
                 display::status_color(val)
             } else {
                 colored::Color::White
             }
-        },
-    );
+        });
 
     for b in &buckets {
         table.add_row(vec![

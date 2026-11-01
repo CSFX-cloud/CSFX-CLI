@@ -29,7 +29,8 @@ pub async fn list(network_id: &str) -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let mut table = Table::new(vec!["ID", "WORKLOAD", "IP", "JOINED"]).with_color(|_, _| colored::Color::White);
+    let mut table =
+        Table::new(vec!["ID", "WORKLOAD", "IP", "JOINED"]).with_color(|_, _| colored::Color::White);
 
     for m in &members {
         table.add_row(vec![
@@ -61,14 +62,22 @@ pub async fn add(network_id: &str, workload_id: String) -> Result<(), Box<dyn st
     let member: Member = serde_json::from_value(data)?;
 
     section("Networks  /  Member Add");
-    display::success(&format!("workload joined network, allocated ip={}", member.allocated_ip));
+    display::success(&format!(
+        "workload joined network, allocated ip={}",
+        member.allocated_ip
+    ));
 
     Ok(())
 }
 
 pub async fn remove(network_id: &str, workload_id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let (client, server, token) = auth()?;
-    let url = format!("{}/networks/{}/members/{}", base_url(&server), network_id, workload_id);
+    let url = format!(
+        "{}/networks/{}/members/{}",
+        base_url(&server),
+        network_id,
+        workload_id
+    );
 
     let pb = display::spinner("removing member...");
     let result = delete_req(&client, &url, &token).await;

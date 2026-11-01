@@ -10,14 +10,18 @@ use clap::Subcommand;
 #[derive(Subcommand)]
 pub enum NetworkCommands {
     List,
-    Get { id: String },
+    Get {
+        id: String,
+    },
     Create {
         name: String,
         cidr: String,
         #[arg(long, default_value = "wireguard")]
         overlay: String,
     },
-    Delete { id: String },
+    Delete {
+        id: String,
+    },
     Policies {
         #[arg(long)]
         network: String,
@@ -62,7 +66,11 @@ pub async fn run(cmd: NetworkCommands) -> Result<(), Box<dyn std::error::Error>>
     match cmd {
         NetworkCommands::List => list::run().await,
         NetworkCommands::Get { id } => get::run(&id).await,
-        NetworkCommands::Create { name, cidr, overlay } => create::run(name, cidr, overlay).await,
+        NetworkCommands::Create {
+            name,
+            cidr,
+            overlay,
+        } => create::run(name, cidr, overlay).await,
         NetworkCommands::Delete { id } => delete::run(&id).await,
         NetworkCommands::Policies { network } => policies::list(&network).await,
         NetworkCommands::PolicyCreate {
@@ -74,9 +82,23 @@ pub async fn run(cmd: NetworkCommands) -> Result<(), Box<dyn std::error::Error>>
             destination,
             port,
             protocol,
-        } => policies::create(&network, direction, action, priority, source, destination, port, protocol).await,
+        } => {
+            policies::create(
+                &network,
+                direction,
+                action,
+                priority,
+                source,
+                destination,
+                port,
+                protocol,
+            )
+            .await
+        }
         NetworkCommands::Members { network } => members::list(&network).await,
         NetworkCommands::MemberAdd { network, workload } => members::add(&network, workload).await,
-        NetworkCommands::MemberRemove { network, workload } => members::remove(&network, &workload).await,
+        NetworkCommands::MemberRemove { network, workload } => {
+            members::remove(&network, &workload).await
+        }
     }
 }

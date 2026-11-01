@@ -36,7 +36,11 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     kv_colored(
         "Degraded",
         if status.degraded { "yes" } else { "no" },
-        if status.degraded { Color::Red } else { Color::Green },
+        if status.degraded {
+            Color::Red
+        } else {
+            Color::Green
+        },
     );
     println!();
 
@@ -45,15 +49,14 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let mut table = Table::new(vec!["AGENT", "ZONE", "ROLE", "STATUS", "CAPACITY"]).with_color(
-        |col, val| {
+    let mut table =
+        Table::new(vec!["AGENT", "ZONE", "ROLE", "STATUS", "CAPACITY"]).with_color(|col, val| {
             if col == 3 {
                 display::status_color(val)
             } else {
                 Color::White
             }
-        },
-    );
+        });
 
     for n in &status.nodes {
         table.add_row(vec![

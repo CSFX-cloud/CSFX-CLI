@@ -24,11 +24,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     section("Registry  /  Statistics");
 
-    println!(
-        "  {:<20} {}",
-        "Total".dimmed(),
-        s.total.to_string().bold()
-    );
+    println!("  {:<20} {}", "Total".dimmed(), s.total.to_string().bold());
     println!(
         "  {:<20} {}",
         "Online".dimmed(),

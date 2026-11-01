@@ -101,7 +101,14 @@ fn print_stats(stats: &ClusterStats) {
     }
 
     let mut table = Table::new(vec![
-        "ID", "HOSTNAME", "STATUS", "CPU", "MEM USED", "MEM TOTAL", "DISK USED", "DISK TOTAL",
+        "ID",
+        "HOSTNAME",
+        "STATUS",
+        "CPU",
+        "MEM USED",
+        "MEM TOTAL",
+        "DISK USED",
+        "DISK TOTAL",
     ])
     .with_color(|col, val| {
         if col == 2 {

@@ -11,7 +11,9 @@ use clap::Subcommand;
 #[derive(Subcommand)]
 pub enum VolumeCommands {
     List,
-    Get { id: String },
+    Get {
+        id: String,
+    },
     Create {
         name: String,
         #[arg(long)]
@@ -19,7 +21,9 @@ pub enum VolumeCommands {
         #[arg(long)]
         pool: Option<String>,
     },
-    Delete { id: String },
+    Delete {
+        id: String,
+    },
     Attach {
         id: String,
         #[arg(long)]
@@ -27,7 +31,9 @@ pub enum VolumeCommands {
         #[arg(long)]
         workload: Option<String>,
     },
-    Detach { id: String },
+    Detach {
+        id: String,
+    },
     Snapshots {
         #[arg(long)]
         volume: String,
@@ -46,7 +52,11 @@ pub async fn run(cmd: VolumeCommands) -> Result<(), Box<dyn std::error::Error>> 
         VolumeCommands::Get { id } => get::run(&id).await,
         VolumeCommands::Create { name, size, pool } => create::run(name, size, pool).await,
         VolumeCommands::Delete { id } => delete::run(&id).await,
-        VolumeCommands::Attach { id, agent, workload } => attach::run(&id, &agent, workload).await,
+        VolumeCommands::Attach {
+            id,
+            agent,
+            workload,
+        } => attach::run(&id, &agent, workload).await,
         VolumeCommands::Detach { id } => detach::run(&id).await,
         VolumeCommands::Snapshots { volume } => snapshots::list(&volume).await,
         VolumeCommands::SnapshotCreate { volume, name } => snapshots::create(&volume, &name).await,

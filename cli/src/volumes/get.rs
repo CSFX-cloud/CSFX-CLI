@@ -35,23 +35,11 @@ pub async fn run(id: &str) -> Result<(), Box<dyn std::error::Error>> {
     kv("Pool", &v.pool);
     kv("Image", &v.image_name);
     kv_colored("Status", &v.status, status_color(&v.status));
-    kv(
-        "Agent",
-        v.attached_to_agent.as_deref().unwrap_or("-"),
-    );
-    kv(
-        "Workload",
-        v.attached_to_workload.as_deref().unwrap_or("-"),
-    );
-    kv(
-        "Device",
-        v.mapped_device.as_deref().unwrap_or("-"),
-    );
+    kv("Agent", v.attached_to_agent.as_deref().unwrap_or("-"));
+    kv("Workload", v.attached_to_workload.as_deref().unwrap_or("-"));
+    kv("Device", v.mapped_device.as_deref().unwrap_or("-"));
     kv("Created", &v.created_at);
-    kv(
-        "Updated",
-        v.updated_at.as_deref().unwrap_or("-"),
-    );
+    kv("Updated", v.updated_at.as_deref().unwrap_or("-"));
 
     println!();
     Ok(())

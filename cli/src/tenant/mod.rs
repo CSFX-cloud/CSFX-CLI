@@ -12,7 +12,9 @@ use clap::Subcommand;
 pub enum TenantCommands {
     Info,
     Users,
-    UserGet { id: String },
+    UserGet {
+        id: String,
+    },
     UserCreate {
         username: String,
         password: String,
@@ -23,7 +25,9 @@ pub enum TenantCommands {
         #[arg(long, default_value = "false")]
         force_password_change: bool,
     },
-    UserDelete { id: String },
+    UserDelete {
+        id: String,
+    },
     Roles,
     SetRole {
         #[arg(long)]
@@ -38,9 +42,13 @@ pub async fn run(cmd: TenantCommands) -> Result<(), Box<dyn std::error::Error>> 
         TenantCommands::Info => info::run().await,
         TenantCommands::Users => list_users::run().await,
         TenantCommands::UserGet { id } => get_user::run(&id).await,
-        TenantCommands::UserCreate { username, password, role, email, force_password_change } => {
-            create_user::run(username, password, role, email, force_password_change).await
-        }
+        TenantCommands::UserCreate {
+            username,
+            password,
+            role,
+            email,
+            force_password_change,
+        } => create_user::run(username, password, role, email, force_password_change).await,
         TenantCommands::UserDelete { id } => delete_user::run(&id).await,
         TenantCommands::Roles => list_roles::run().await,
         TenantCommands::SetRole { user, role } => set_role::run(&user, role).await,

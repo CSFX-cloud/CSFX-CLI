@@ -33,18 +33,20 @@ pub async fn list(network_id: &str) -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let mut table = Table::new(vec!["ID", "DIR", "ACTION", "SRC", "DST", "PORT", "PROTO", "PRIO"])
-        .with_color(|col, val| {
-            if col == 2 {
-                if val == "allow" {
-                    colored::Color::Green
-                } else {
-                    colored::Color::Red
-                }
+    let mut table = Table::new(vec![
+        "ID", "DIR", "ACTION", "SRC", "DST", "PORT", "PROTO", "PRIO",
+    ])
+    .with_color(|col, val| {
+        if col == 2 {
+            if val == "allow" {
+                colored::Color::Green
             } else {
-                colored::Color::White
+                colored::Color::Red
             }
-        });
+        } else {
+            colored::Color::White
+        }
+    });
 
     for p in &policies {
         table.add_row(vec![
@@ -52,8 +54,12 @@ pub async fn list(network_id: &str) -> Result<(), Box<dyn std::error::Error>> {
             p.direction.clone(),
             p.action.clone(),
             p.source_cidr.clone().unwrap_or_else(|| "*".to_string()),
-            p.destination_cidr.clone().unwrap_or_else(|| "*".to_string()),
-            p.port.map(|v| v.to_string()).unwrap_or_else(|| "*".to_string()),
+            p.destination_cidr
+                .clone()
+                .unwrap_or_else(|| "*".to_string()),
+            p.port
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "*".to_string()),
             p.protocol.clone().unwrap_or_else(|| "*".to_string()),
             p.priority.to_string(),
         ]);

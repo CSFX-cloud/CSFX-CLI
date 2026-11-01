@@ -74,7 +74,12 @@ pub async fn list() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let mut table = Table::new(vec![
-        "ID", "DESCRIPTION", "CREATED BY", "USES", "EXPIRES", "REVOKED",
+        "ID",
+        "DESCRIPTION",
+        "CREATED BY",
+        "USES",
+        "EXPIRES",
+        "REVOKED",
     ])
     .with_color(|col, val| {
         if col == 5 {

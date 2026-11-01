@@ -12,7 +12,11 @@ struct Volume {
     mapped_device: Option<String>,
 }
 
-pub async fn run(volume_id: &str, agent_id: &str, workload_id: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run(
+    volume_id: &str,
+    agent_id: &str,
+    workload_id: Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let (client, server, token) = auth()?;
     let url = format!("{}/volumes/{}/attach", base_url(&server), volume_id);
 

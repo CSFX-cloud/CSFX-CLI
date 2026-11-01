@@ -9,8 +9,12 @@ use clap::Subcommand;
 pub enum RegistryCommands {
     Agents,
     #[command(name = "agents-get")]
-    AgentsGet { id: String },
-    Deregister { id: String },
+    AgentsGet {
+        id: String,
+    },
+    Deregister {
+        id: String,
+    },
     Stats,
     #[command(name = "bootstrap-create")]
     BootstrapCreate {
@@ -24,7 +28,9 @@ pub enum RegistryCommands {
     #[command(name = "bootstrap-list")]
     BootstrapList,
     #[command(name = "bootstrap-revoke")]
-    BootstrapRevoke { id: String },
+    BootstrapRevoke {
+        id: String,
+    },
 }
 
 pub async fn run(cmd: RegistryCommands) -> Result<(), Box<dyn std::error::Error>> {
@@ -33,9 +39,11 @@ pub async fn run(cmd: RegistryCommands) -> Result<(), Box<dyn std::error::Error>
         RegistryCommands::AgentsGet { id } => agents::get(&id).await,
         RegistryCommands::Deregister { id } => deregister::agent(&id).await,
         RegistryCommands::Stats => stats::run().await,
-        RegistryCommands::BootstrapCreate { description, ttl, max_uses } => {
-            bootstrap::create(description, ttl, max_uses).await
-        }
+        RegistryCommands::BootstrapCreate {
+            description,
+            ttl,
+            max_uses,
+        } => bootstrap::create(description, ttl, max_uses).await,
         RegistryCommands::BootstrapList => bootstrap::list().await,
         RegistryCommands::BootstrapRevoke { id } => bootstrap::revoke(&id).await,
     }

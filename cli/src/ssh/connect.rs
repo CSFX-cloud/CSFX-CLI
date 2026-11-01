@@ -1,6 +1,6 @@
 use crate::display;
-use crate::ssh::access;
 use crate::http::{auth, base_url, get_json};
+use crate::ssh::access;
 use chrono::{Duration, Utc};
 use serde::Deserialize;
 use serde_json::json;
@@ -53,7 +53,10 @@ pub async fn run(node: String, port: u16) -> Result<(), Box<dyn std::error::Erro
     let expires_at = Utc::now() + Duration::minutes(5);
     let key_id = register_key(&client, &base, &token, &pubkey_str, expires_at).await?;
 
-    display::success(&format!("connecting to {} ({}@{}:{})", node, username, target_ip, port));
+    display::success(&format!(
+        "connecting to {} ({}@{}:{})",
+        node, username, target_ip, port
+    ));
 
     let ssh_status = Command::new("ssh")
         .arg("-i")
@@ -113,7 +116,10 @@ async fn resolve_node(
     };
 
     if agent.status != "online" {
-        display::warn(&format!("node status is '{}', attempting connection anyway", agent.status));
+        display::warn(&format!(
+            "node status is '{}', attempting connection anyway",
+            agent.status
+        ));
     }
 
     agent

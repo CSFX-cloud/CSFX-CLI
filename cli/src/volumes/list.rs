@@ -29,8 +29,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let mut table = Table::new(vec!["ID", "NAME", "SIZE", "POOL", "STATUS", "AGENT"])
-        .with_color(|col, val| {
+    let mut table =
+        Table::new(vec!["ID", "NAME", "SIZE", "POOL", "STATUS", "AGENT"]).with_color(|col, val| {
             if col == 4 {
                 display::status_color(val)
             } else {

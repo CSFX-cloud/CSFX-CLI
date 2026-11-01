@@ -1,4 +1,4 @@
-use crate::display::{self, status_color, section, Table};
+use crate::display::{self, section, status_color, Table};
 use crate::http::{auth, base_url, get_json};
 use serde::Deserialize;
 
@@ -30,14 +30,21 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let mut table = Table::new(vec!["ID", "TYPE", "AGENT", "WORKLOADS", "DURATION", "CREATED"])
-        .with_color(|col, val| {
-            if col == 1 {
-                status_color(val)
-            } else {
-                colored::Color::White
-            }
-        });
+    let mut table = Table::new(vec![
+        "ID",
+        "TYPE",
+        "AGENT",
+        "WORKLOADS",
+        "DURATION",
+        "CREATED",
+    ])
+    .with_color(|col, val| {
+        if col == 1 {
+            status_color(val)
+        } else {
+            colored::Color::White
+        }
+    });
 
     for e in &events {
         let duration = e

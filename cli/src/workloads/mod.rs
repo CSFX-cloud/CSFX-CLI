@@ -9,7 +9,9 @@ use clap::Subcommand;
 #[derive(Subcommand)]
 pub enum WorkloadCommands {
     List,
-    Get { id: String },
+    Get {
+        id: String,
+    },
     Create {
         name: String,
         image: String,
@@ -20,7 +22,9 @@ pub enum WorkloadCommands {
         #[arg(long, default_value = "10737418240")]
         disk: i64,
     },
-    Delete { id: String },
+    Delete {
+        id: String,
+    },
     Metrics {
         id: String,
         #[arg(long, short)]
@@ -32,9 +36,13 @@ pub async fn run(cmd: WorkloadCommands) -> Result<(), Box<dyn std::error::Error>
     match cmd {
         WorkloadCommands::List => list::run().await,
         WorkloadCommands::Get { id } => get::run(&id).await,
-        WorkloadCommands::Create { name, image, cpu, memory, disk } => {
-            create::run(name, image, cpu, memory, disk).await
-        }
+        WorkloadCommands::Create {
+            name,
+            image,
+            cpu,
+            memory,
+            disk,
+        } => create::run(name, image, cpu, memory, disk).await,
         WorkloadCommands::Delete { id } => delete::run(&id).await,
         WorkloadCommands::Metrics { id, watch } => metrics::run(&id, watch).await,
     }

@@ -12,7 +12,11 @@ struct Volume {
     status: String,
 }
 
-pub async fn run(name: String, size_gb: i32, pool: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run(
+    name: String,
+    size_gb: i32,
+    pool: Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let (client, server, token) = auth()?;
     let url = format!("{}/volumes", base_url(&server));
 

@@ -13,8 +13,22 @@ pub async fn run(id: &str) -> Result<(), Box<dyn std::error::Error>> {
     display::kv("Username", u["username"].as_str().unwrap_or("-"));
     display::kv("Email", u["email"].as_str().unwrap_or("-"));
     display::kv("Role", u["role_name"].as_str().unwrap_or("-"));
-    display::kv("2FA", if u["two_factor_enabled"].as_bool().unwrap_or(false) { "enabled" } else { "disabled" });
-    display::kv("Force PW Change", if u["force_password_change"].as_bool().unwrap_or(false) { "yes" } else { "no" });
+    display::kv(
+        "2FA",
+        if u["two_factor_enabled"].as_bool().unwrap_or(false) {
+            "enabled"
+        } else {
+            "disabled"
+        },
+    );
+    display::kv(
+        "Force PW Change",
+        if u["force_password_change"].as_bool().unwrap_or(false) {
+            "yes"
+        } else {
+            "no"
+        },
+    );
     display::kv("Joined", u["joined_at"].as_str().unwrap_or("-"));
     println!();
     Ok(())

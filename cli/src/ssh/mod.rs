@@ -16,7 +16,11 @@ pub enum SshCommands {
     Enable {
         #[arg(long, help = "Hours until access closes again (default 8)")]
         hours: Option<i64>,
-        #[arg(long, conflicts_with = "hours", help = "Keep access open until disabled")]
+        #[arg(
+            long,
+            conflicts_with = "hours",
+            help = "Keep access open until disabled"
+        )]
         unlimited: bool,
     },
     #[command(about = "Close SSH access on all cluster nodes")]

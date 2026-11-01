@@ -208,15 +208,9 @@ fn render(
 
     print!("\x1B[2J\x1B[H");
 
-    let target_label = target
-        .or(status.desired_version.as_deref())
-        .unwrap_or("?");
+    let target_label = target.or(status.desired_version.as_deref()).unwrap_or("?");
 
-    println!(
-        "  {} {}",
-        "Update:".bold(),
-        target_label.yellow().bold()
-    );
+    println!("  {} {}", "Update:".bold(), target_label.yellow().bold());
 
     if status.paused {
         println!("  {}", "updates paused".yellow());
@@ -270,7 +264,10 @@ fn render(
     }
 
     println!();
-    println!("  {}", "Ctrl+C to exit (update continues in background)".dimmed());
+    println!(
+        "  {}",
+        "Ctrl+C to exit (update continues in background)".dimmed()
+    );
 
     std::io::stdout().flush().ok();
 }
@@ -304,9 +301,18 @@ async fn watch_loop(
         }
 
         let steps = build_steps(&status, target_version.as_deref());
-        render(&steps, &status, start.elapsed(), tick, target_version.as_deref());
+        render(
+            &steps,
+            &status,
+            start.elapsed(),
+            tick,
+            target_version.as_deref(),
+        );
 
-        let done = steps.iter().enumerate().any(|(i, s)| i == 3 && s.phase == Phase::Done);
+        let done = steps
+            .iter()
+            .enumerate()
+            .any(|(i, s)| i == 3 && s.phase == Phase::Done);
         let failed = steps.iter().any(|s| s.phase == Phase::Failed);
 
         if done || failed {

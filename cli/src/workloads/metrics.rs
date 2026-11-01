@@ -130,11 +130,8 @@ pub async fn run(id: &str, watch: bool) -> Result<(), Box<dyn std::error::Error>
             Ok(v) => match serde_json::from_value::<Workload>(v) {
                 Ok(w) => {
                     let agent_metrics = if let Some(ref agent_id) = w.assigned_agent_id {
-                        let url = format!(
-                            "{}/agents/{}/metrics/latest",
-                            base_url(&server),
-                            agent_id
-                        );
+                        let url =
+                            format!("{}/agents/{}/metrics/latest", base_url(&server), agent_id);
                         get_json(&client, &url, &token)
                             .await
                             .ok()

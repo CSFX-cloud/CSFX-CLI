@@ -9,17 +9,27 @@ use clap::Subcommand;
 #[derive(Subcommand)]
 pub enum NodeCommands {
     List,
-    Get { id: String },
+    Get {
+        id: String,
+    },
     JoinToken {
         #[arg(long, default_value = "worker", value_parser = ["worker", "master"])]
         role: String,
         #[arg(long, default_value_t = 1)]
         ttl: i64,
     },
-    Cordon { id: String },
-    Uncordon { id: String },
-    Drain { id: String },
-    Remove { id: String },
+    Cordon {
+        id: String,
+    },
+    Uncordon {
+        id: String,
+    },
+    Drain {
+        id: String,
+    },
+    Remove {
+        id: String,
+    },
     Metrics {
         #[arg(long, short)]
         watch: bool,

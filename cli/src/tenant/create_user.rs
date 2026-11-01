@@ -23,7 +23,10 @@ pub async fn run(
     let u = http::post_json(&client, &url, &token, &body).await?;
     pb.finish_and_clear();
 
-    display::success(&format!("user created: {}", u["id"].as_str().unwrap_or("-")));
+    display::success(&format!(
+        "user created: {}",
+        u["id"].as_str().unwrap_or("-")
+    ));
     display::kv("Username", u["username"].as_str().unwrap_or("-"));
     display::kv("Role", u["role_name"].as_str().unwrap_or("-"));
     println!();

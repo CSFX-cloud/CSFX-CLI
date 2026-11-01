@@ -37,10 +37,7 @@ pub async fn run(id: &str) -> Result<(), Box<dyn std::error::Error>> {
     kv("CPU", &format!("{} millicores", w.cpu_millicores));
     kv("Memory", &format!("{} MB", w.memory_bytes / 1024 / 1024));
     kv("Disk", &format!("{} GB", w.disk_bytes / 1024 / 1024 / 1024));
-    kv(
-        "Agent",
-        w.assigned_agent_id.as_deref().unwrap_or("-"),
-    );
+    kv("Agent", w.assigned_agent_id.as_deref().unwrap_or("-"));
     kv("Container", w.container_id.as_deref().unwrap_or("-"));
     kv("Created", &w.created_at[..16.min(w.created_at.len())]);
     kv(

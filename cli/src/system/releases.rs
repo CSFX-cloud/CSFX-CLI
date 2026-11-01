@@ -41,7 +41,11 @@ pub async fn run(include_pre: bool) -> Result<(), Box<dyn std::error::Error>> {
     for release in &filtered {
         let version = release.tag_name.trim_start_matches('v');
         let is_current = version == CURRENT_VERSION;
-        let kind = if release.prerelease { "pre-release" } else { "stable" };
+        let kind = if release.prerelease {
+            "pre-release"
+        } else {
+            "stable"
+        };
 
         let version_str = if is_current {
             format!("{} (running)", version).green().bold().to_string()

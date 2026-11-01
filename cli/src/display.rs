@@ -28,9 +28,9 @@ pub fn banner() {
 
     let colors: [(u8, u8, u8); 6] = if is_light_background() {
         [
-            (30,  30,  30),
-            (60,  60,  60),
-            (90,  90,  90),
+            (30, 30, 30),
+            (60, 60, 60),
+            (90, 90, 90),
             (120, 120, 120),
             (150, 150, 150),
             (180, 180, 180),
@@ -42,13 +42,21 @@ pub fn banner() {
             (185, 185, 185),
             (150, 150, 150),
             (115, 115, 115),
-            (80,  80,  80),
+            (80, 80, 80),
         ]
     };
 
     println!();
     for (line, (r, g, b)) in lines.iter().zip(colors.iter()) {
-        println!("{}", line.color(Color::TrueColor { r: *r, g: *g, b: *b }).bold());
+        println!(
+            "{}",
+            line.color(Color::TrueColor {
+                r: *r,
+                g: *g,
+                b: *b
+            })
+            .bold()
+        );
         std::io::stdout().flush().ok();
         sleep(Duration::from_millis(55));
     }

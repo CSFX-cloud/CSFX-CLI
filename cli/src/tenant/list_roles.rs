@@ -18,10 +18,20 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut table = display::Table::new(vec!["ID", "Name", "Description", "System"]);
     for r in roles {
         table.add_row(vec![
-            r["id"].as_str().unwrap_or("-").chars().take(8).collect::<String>() + "...",
+            r["id"]
+                .as_str()
+                .unwrap_or("-")
+                .chars()
+                .take(8)
+                .collect::<String>()
+                + "...",
             r["name"].as_str().unwrap_or("-").to_string(),
             r["description"].as_str().unwrap_or("-").to_string(),
-            if r["is_system_role"].as_bool().unwrap_or(false) { "yes".to_string() } else { "no".to_string() },
+            if r["is_system_role"].as_bool().unwrap_or(false) {
+                "yes".to_string()
+            } else {
+                "no".to_string()
+            },
         ]);
     }
     table.print();

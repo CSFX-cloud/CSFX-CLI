@@ -38,7 +38,13 @@ pub async fn list(bucket_id: &str) -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let mut table = Table::new(vec!["ID", "NAME", "ACCESS KEY ID", "PERMISSIONS", "CREATED"]);
+    let mut table = Table::new(vec![
+        "ID",
+        "NAME",
+        "ACCESS KEY ID",
+        "PERMISSIONS",
+        "CREATED",
+    ]);
 
     for k in &keys {
         table.add_row(vec![
@@ -75,7 +81,13 @@ pub async fn create(
     pb.finish_and_clear();
 
     let k: AccessKeyCreated = serde_json::from_value(data?)?;
-    print_created_key(&k.id, &k.name, &k.garage_key_id, &k.permissions, &k.secret_access_key);
+    print_created_key(
+        &k.id,
+        &k.name,
+        &k.garage_key_id,
+        &k.permissions,
+        &k.secret_access_key,
+    );
 
     Ok(())
 }
@@ -94,14 +106,25 @@ pub async fn rotate(bucket_id: &str, key_id: &str) -> Result<(), Box<dyn std::er
     pb.finish_and_clear();
 
     let k: AccessKeyCreated = serde_json::from_value(data?)?;
-    print_created_key(&k.id, &k.name, &k.garage_key_id, &k.permissions, &k.secret_access_key);
+    print_created_key(
+        &k.id,
+        &k.name,
+        &k.garage_key_id,
+        &k.permissions,
+        &k.secret_access_key,
+    );
 
     Ok(())
 }
 
 pub async fn delete(bucket_id: &str, key_id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let (client, server, token) = auth()?;
-    let url = format!("{}/buckets/{}/keys/{}", base_url(&server), bucket_id, key_id);
+    let url = format!(
+        "{}/buckets/{}/keys/{}",
+        base_url(&server),
+        bucket_id,
+        key_id
+    );
 
     let pb = display::spinner("deleting access key...");
     let result = delete_req(&client, &url, &token).await;

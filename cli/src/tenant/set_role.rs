@@ -4,7 +4,11 @@ use serde_json::json;
 
 pub async fn run(user_id: &str, role_id: String) -> Result<(), Box<dyn std::error::Error>> {
     let (client, server, token) = http::auth()?;
-    let url = format!("{}/organization/users/{}/role", http::base_url(&server), user_id);
+    let url = format!(
+        "{}/organization/users/{}/role",
+        http::base_url(&server),
+        user_id
+    );
 
     let body = json!({ "role_id": role_id });
 

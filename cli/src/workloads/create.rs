@@ -42,7 +42,9 @@ pub async fn run(
     kv_colored("Status", &resp.status, status_color(&resp.status));
     kv(
         "Assigned Agent",
-        resp.assigned_agent_id.as_deref().unwrap_or("none (pending)"),
+        resp.assigned_agent_id
+            .as_deref()
+            .unwrap_or("none (pending)"),
     );
     kv("Message", &resp.message);
 
