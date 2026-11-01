@@ -18,6 +18,7 @@ use crate::registry::RegistryCommands;
 use crate::ssh::SshCommands;
 use crate::system::SystemCommands;
 use crate::tenant::TenantCommands;
+use crate::vault::{GrantCommands, SecretCommands, VaultCommands};
 use crate::volumes::VolumeCommands;
 use crate::workloads::WorkloadCommands;
 
@@ -77,6 +78,54 @@ const COMMANDS: &[(&str, &str)] = &[
     ("tenant user-delete <id>", "delete a user"),
     ("tenant roles", "list available roles"),
     ("tenant set-role --user <id> --role <role-id>", "assign a role to a user"),
+    ("vault list <resource-group>", "list key vaults"),
+    ("vault create <resource-group> <name>", "create a key vault"),
+    ("vault get <resource-group> <vault>", "show vault details"),
+    (
+        "vault delete <resource-group> <vault>",
+        "delete a vault and its secrets",
+    ),
+    (
+        "vault seal <resource-group> <vault>",
+        "block all access to a vault",
+    ),
+    (
+        "vault unseal <resource-group> <vault>",
+        "allow access to a vault again",
+    ),
+    ("vault audit <resource-group> <vault>", "show the audit log"),
+    (
+        "vault secrets list <resource-group> <vault>",
+        "list secrets",
+    ),
+    (
+        "vault secrets set <resource-group> <vault> <name> [--value <v>] [--expires <date>]",
+        "store a secret",
+    ),
+    (
+        "vault secrets delete <resource-group> <vault> <name>",
+        "delete a secret",
+    ),
+    (
+        "vault secrets restore <resource-group> <vault> <name> --version <n>",
+        "restore a deleted secret",
+    ),
+    (
+        "vault secrets reveal <resource-group> <vault> <name> --reason <text>",
+        "show a secret value",
+    ),
+    (
+        "vault grants list <resource-group> <vault>",
+        "list who can use what",
+    ),
+    (
+        "vault grants add <resource-group> <vault> <who> <read|reveal|manage> [--on <secret>]",
+        "grant access",
+    ),
+    (
+        "vault grants remove <resource-group> <vault> <id>",
+        "revoke access",
+    ),
     ("ssh connect <node>", "open ssh session to a cluster node"),
     ("ssh enable [--hours <n> | --unlimited]", "allow ssh access on all nodes"),
     ("ssh disable", "close ssh access on all nodes"),
@@ -205,6 +254,25 @@ fn print_help() {
         ),
         ("Events", &["events list"]),
         (
+            "Key vaults",
+            &[
+                "vault list <resource-group>",
+                "vault create <resource-group> <name>",
+                "vault get <resource-group> <vault>",
+                "vault delete <resource-group> <vault>",
+                "vault seal|unseal <resource-group> <vault>",
+                "vault audit <resource-group> <vault>",
+                "vault secrets list <resource-group> <vault>",
+                "vault secrets set <resource-group> <vault> <name> [--value <v>] [--expires <date>]",
+                "vault secrets delete <resource-group> <vault> <name>",
+                "vault secrets restore <resource-group> <vault> <name> --version <n>",
+                "vault secrets reveal <resource-group> <vault> <name> --reason <text> [--raw]",
+                "vault grants list <resource-group> <vault>",
+                "vault grants add <resource-group> <vault> <who> <read|reveal|manage> [--on <secret>] [--approval]",
+                "vault grants remove <resource-group> <vault> <id>",
+            ],
+        ),
+        (
             "Gateways",
             &[
                 "gateway list <resource-group>",
@@ -285,6 +353,112 @@ fn parse_flag<'a>(parts: &[&'a str], flag: &str) -> Option<&'a str> {
         .windows(2)
         .find(|w| w[0] == flag)
         .map(|w| w[1])
+}
+
+fn parse_text(parts: &[&str], flag: &str) -> Option<String> {
+    let start = parts.iter().position(|part| *part == flag)? + 1;
+    let words: Vec<&str> = parts[start..]
+        .iter()
+        .take_while(|part| !part.starts_with("--"))
+        .copied()
+        .collect();
+    (!words.is_empty()).then(|| words.join(" "))
+}
+
+async fn dispatch_vault(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
+    let command = match parts {
+        ["list", group] => VaultCommands::List {
+            resource_group: group.to_string(),
+        },
+        ["create", group, name] => VaultCommands::Create {
+            resource_group: group.to_string(),
+            name: name.to_string(),
+        },
+        ["get", group, vault] => VaultCommands::Get {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+        },
+        ["delete", group, vault] => VaultCommands::Delete {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+        },
+        ["seal", group, vault] => VaultCommands::Seal {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+        },
+        ["unseal", group, vault] => VaultCommands::Unseal {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+        },
+        ["audit", group, vault] => VaultCommands::Audit {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+        },
+        ["secrets", rest @ ..] => VaultCommands::Secrets(parse_secrets(rest)?),
+        ["grants", rest @ ..] => VaultCommands::Grants(parse_grants(rest)?),
+        _ => return Err("unknown vault command, type help".into()),
+    };
+    crate::vault::run(command).await
+}
+
+fn parse_secrets(parts: &[&str]) -> Result<SecretCommands, Box<dyn std::error::Error>> {
+    Ok(match parts {
+        ["list", group, vault] => SecretCommands::List {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+        },
+        ["set", group, vault, name, ..] => SecretCommands::Set {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+            name: name.to_string(),
+            value: parse_flag(parts, "--value").map(str::to_string),
+            expires: parse_flag(parts, "--expires").map(str::to_string),
+        },
+        ["delete", group, vault, name] => SecretCommands::Delete {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+            name: name.to_string(),
+        },
+        ["restore", group, vault, name, ..] => SecretCommands::Restore {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+            name: name.to_string(),
+            version: parse_flag(parts, "--version")
+                .ok_or("missing --version <n>")?
+                .parse()?,
+        },
+        ["reveal", group, vault, name, ..] => SecretCommands::Reveal {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+            name: name.to_string(),
+            reason: parse_text(parts, "--reason").ok_or("missing --reason <text>")?,
+            raw: parts.contains(&"--raw"),
+        },
+        _ => return Err("unknown vault secrets command, type help".into()),
+    })
+}
+
+fn parse_grants(parts: &[&str]) -> Result<GrantCommands, Box<dyn std::error::Error>> {
+    Ok(match parts {
+        ["list", group, vault] => GrantCommands::List {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+        },
+        ["add", group, vault, who, can, ..] => GrantCommands::Add {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+            who: who.to_string(),
+            can: can.to_string(),
+            on: parse_flag(parts, "--on").map(str::to_string),
+            approval: parts.contains(&"--approval"),
+        },
+        ["remove", group, vault, id] => GrantCommands::Remove {
+            resource_group: group.to_string(),
+            vault: vault.to_string(),
+            id: id.to_string(),
+        },
+        _ => return Err("unknown vault grants command, type help".into()),
+    })
 }
 
 async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
@@ -633,6 +807,8 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
             let role = parse_flag(parts, "--role").unwrap_or("").to_string();
             crate::tenant::run(TenantCommands::SetRole { user, role }).await?
         }
+
+        ["vault", rest @ ..] => dispatch_vault(rest).await?,
 
         ["ssh", "connect", node] => {
             crate::ssh::run(SshCommands::Connect {
