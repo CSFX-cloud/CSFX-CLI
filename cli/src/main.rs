@@ -14,6 +14,7 @@ mod ssh;
 mod system;
 mod tenant;
 mod user;
+mod vault;
 mod volumes;
 mod workloads;
 
@@ -66,6 +67,8 @@ enum Commands {
     System(system::SystemCommands),
     #[command(subcommand, about = "Connect to cluster nodes via SSH")]
     Ssh(ssh::SshCommands),
+    #[command(subcommand, about = "Manage key vaults, secrets and access of a resource group")]
+    Vault(vault::VaultCommands),
 }
 
 #[tokio::main]
@@ -95,6 +98,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Tenant(cmd)) => tenant::run(cmd).await?,
         Some(Commands::System(cmd)) => system::run(cmd).await?,
         Some(Commands::Ssh(cmd)) => ssh::run(cmd).await?,
+        Some(Commands::Vault(cmd)) => vault::run(cmd).await?,
     }
 
     Ok(())

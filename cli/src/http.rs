@@ -107,3 +107,31 @@ pub async fn post_json(
     Ok(resp.json().await?)
 }
 
+pub async fn request_json(
+    client: &reqwest::Client,
+    method: reqwest::Method,
+    url: &str,
+    token: &str,
+    body: Option<&Value>,
+) -> Result<Value, Box<dyn std::error::Error>> {
+    let mut request = client
+        .request(method, url)
+        .header("Authorization", format!("Bearer {}", token));
+    if let Some(body) = body {
+        request = request.json(body);
+    }
+    let resp = request.send().await?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let err = resp.text().await?;
+        crate::display::error(&format!("request failed: {} {}", status, err));
+        std::process::exit(1);
+    }
+
+    let text = resp.text().await?;
+    if text.is_empty() {
+        return Ok(Value::Null);
+    }
+    Ok(serde_json::from_str(&text)?)
+}
