@@ -9,8 +9,10 @@ use std::borrow::Cow;
 
 use crate::display;
 use crate::events::EventCommands;
+use crate::connect::ConnectCommands;
 use crate::dns::{DnsCommands, RecordCommands};
 use crate::gateway::GatewayCommands;
+use crate::groups::GroupCommands;
 use crate::ingress::IngressCommands;
 use crate::networks::NetworkCommands;
 use crate::nodes::NodeCommands;
@@ -130,6 +132,8 @@ const COMMANDS: &[(&str, &str)] = &[
     ("ssh enable [--hours <n> | --unlimited]", "allow ssh access on all nodes"),
     ("ssh disable", "close ssh access on all nodes"),
     ("ssh status", "show whether ssh access is open"),
+    ("rg list", "list all resource groups"),
+    ("connect rg <name> [--refresh] [--down]", "join the private network of a resource group over wireguard"),
     ("clear", "clear the terminal screen"),
     ("help", "show available commands"),
     ("exit", "exit the shell"),
@@ -323,6 +327,10 @@ fn print_help() {
                 "tenant roles",
                 "tenant set-role --user <id> --role <role-id>",
             ],
+        ),
+        (
+            "Resource groups",
+            &["rg list", "connect rg <name> [--refresh] [--down]"],
         ),
         (
             "SSH",
@@ -809,6 +817,17 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         ["vault", rest @ ..] => dispatch_vault(rest).await?,
+
+        ["rg", "list"] => crate::groups::run(GroupCommands::List).await?,
+
+        ["connect", "rg", name, flags @ ..] => {
+            crate::connect::run(ConnectCommands::Rg {
+                name: name.to_string(),
+                refresh: flags.contains(&"--refresh"),
+                down: flags.contains(&"--down"),
+            })
+            .await?
+        }
 
         ["ssh", "connect", node] => {
             crate::ssh::run(SshCommands::Connect {

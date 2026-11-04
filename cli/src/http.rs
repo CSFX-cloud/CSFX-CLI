@@ -40,6 +40,27 @@ pub async fn get_json(
     Ok(resp.json().await?)
 }
 
+pub async fn get_text(
+    client: &reqwest::Client,
+    url: &str,
+    token: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let resp = client
+        .get(url)
+        .header("Authorization", format!("Bearer {}", token))
+        .send()
+        .await?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body = resp.text().await?;
+        crate::display::error(&format!("request failed: {} {}", status, body));
+        std::process::exit(1);
+    }
+
+    Ok(resp.text().await?)
+}
+
 pub async fn delete_req(
     client: &reqwest::Client,
     url: &str,

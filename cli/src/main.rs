@@ -1,10 +1,12 @@
 mod buckets;
 mod config;
+mod connect;
 mod display;
 mod events;
 mod http;
 mod dns;
 mod gateway;
+mod groups;
 mod ingress;
 mod networks;
 mod nodes;
@@ -69,6 +71,10 @@ enum Commands {
     Ssh(ssh::SshCommands),
     #[command(subcommand, about = "Manage key vaults, secrets and access of a resource group")]
     Vault(vault::VaultCommands),
+    #[command(subcommand, about = "Join the private network of a resource group over WireGuard")]
+    Connect(connect::ConnectCommands),
+    #[command(subcommand, about = "List resource groups")]
+    Rg(groups::GroupCommands),
 }
 
 #[tokio::main]
@@ -99,6 +105,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::System(cmd)) => system::run(cmd).await?,
         Some(Commands::Ssh(cmd)) => ssh::run(cmd).await?,
         Some(Commands::Vault(cmd)) => vault::run(cmd).await?,
+        Some(Commands::Connect(cmd)) => connect::run(cmd).await?,
+        Some(Commands::Rg(cmd)) => groups::run(cmd).await?,
     }
 
     Ok(())
