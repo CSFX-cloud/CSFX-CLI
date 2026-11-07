@@ -2,11 +2,11 @@ mod buckets;
 mod config;
 mod connect;
 mod display;
-mod events;
-mod http;
 mod dns;
+mod events;
 mod gateway;
 mod groups;
+mod http;
 mod ingress;
 mod networks;
 mod nodes;
@@ -57,7 +57,10 @@ enum Commands {
     Events(events::EventCommands),
     #[command(subcommand, about = "Manage ingress gateways of a resource group")]
     Gateway(gateway::GatewayCommands),
-    #[command(subcommand, about = "Publish workloads under hostnames through a gateway")]
+    #[command(
+        subcommand,
+        about = "Publish workloads under hostnames through a gateway"
+    )]
     Ingress(ingress::IngressCommands),
     #[command(subcommand, about = "Platform DNS zone, manual records and CA trust")]
     Dns(dns::DnsCommands),
@@ -69,9 +72,15 @@ enum Commands {
     System(system::SystemCommands),
     #[command(subcommand, about = "Connect to cluster nodes via SSH")]
     Ssh(ssh::SshCommands),
-    #[command(subcommand, about = "Manage key vaults, secrets and access of a resource group")]
+    #[command(
+        subcommand,
+        about = "Manage key vaults, secrets and access of a resource group"
+    )]
     Vault(vault::VaultCommands),
-    #[command(subcommand, about = "Join the private network of a resource group over WireGuard")]
+    #[command(
+        subcommand,
+        about = "Join the private network of a resource group over WireGuard"
+    )]
     Connect(connect::ConnectCommands),
     #[command(subcommand, about = "List resource groups")]
     Rg(groups::GroupCommands),

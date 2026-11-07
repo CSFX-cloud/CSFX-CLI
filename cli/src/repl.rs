@@ -7,10 +7,10 @@ use rustyline::validate::Validator;
 use rustyline::{CompletionType, Config, Context, Editor, Helper};
 use std::borrow::Cow;
 
-use crate::display;
-use crate::events::EventCommands;
 use crate::connect::ConnectCommands;
+use crate::display;
 use crate::dns::{DnsCommands, RecordCommands};
+use crate::events::EventCommands;
 use crate::gateway::GatewayCommands;
 use crate::groups::GroupCommands;
 use crate::ingress::IngressCommands;
@@ -33,26 +33,47 @@ const COMMANDS: &[(&str, &str)] = &[
     ("volumes get <id>", "show volume details"),
     ("volumes create <name> --size <gb>", "create a new volume"),
     ("volumes delete <id>", "delete a volume"),
-    ("volumes attach <id> --agent <agent-id>", "attach volume to agent"),
+    (
+        "volumes attach <id> --agent <agent-id>",
+        "attach volume to agent",
+    ),
     ("volumes detach <id>", "detach volume from agent"),
-    ("volumes snapshots --volume <id>", "list snapshots of a volume"),
-    ("volumes snapshot-create --volume <id> --name <name>", "create a snapshot"),
+    (
+        "volumes snapshots --volume <id>",
+        "list snapshots of a volume",
+    ),
+    (
+        "volumes snapshot-create --volume <id> --name <name>",
+        "create a snapshot",
+    ),
     ("registry agents", "list registered agents"),
     ("registry agents-get <id>", "show agent details"),
     ("registry deregister <id>", "deregister an agent"),
     ("registry stats", "show registry statistics"),
-    ("registry bootstrap-create", "create a cluster-wide bootstrap token"),
+    (
+        "registry bootstrap-create",
+        "create a cluster-wide bootstrap token",
+    ),
     ("registry bootstrap-list", "list active bootstrap tokens"),
     ("registry bootstrap-revoke <id>", "revoke a bootstrap token"),
     ("nodes list", "list all nodes"),
     ("nodes get <id>", "show node details"),
     ("nodes metrics", "show cluster node metrics"),
     ("nodes metrics --watch", "live-refresh cluster node metrics"),
-    ("nodes agent-metrics <id>", "show metrics for a specific agent"),
-    ("nodes agent-metrics <id> --watch", "live-refresh agent metrics"),
+    (
+        "nodes agent-metrics <id>",
+        "show metrics for a specific agent",
+    ),
+    (
+        "nodes agent-metrics <id> --watch",
+        "live-refresh agent metrics",
+    ),
     ("system stats", "show cluster-wide aggregated stats"),
     ("system stats --watch", "live-refresh cluster stats"),
-    ("system update <version>", "schedule and watch a control plane update"),
+    (
+        "system update <version>",
+        "schedule and watch a control plane update",
+    ),
     ("system update-watch", "watch current update progress"),
     ("system update-pause", "pause automatic updates"),
     ("system update-resume", "resume automatic updates"),
@@ -62,24 +83,45 @@ const COMMANDS: &[(&str, &str)] = &[
     ("workloads create <name> <image>", "schedule a new workload"),
     ("workloads delete <id>", "delete a workload"),
     ("workloads metrics <id>", "show workload resource usage"),
-    ("workloads metrics <id> --watch", "live-refresh workload metrics"),
+    (
+        "workloads metrics <id> --watch",
+        "live-refresh workload metrics",
+    ),
     ("events list", "list failover and audit events"),
     ("networks list", "list all overlay networks"),
     ("networks get <id>", "show network details"),
-    ("networks create <name> <cidr>", "create a new overlay network"),
+    (
+        "networks create <name> <cidr>",
+        "create a new overlay network",
+    ),
     ("networks delete <id>", "delete a network"),
     ("networks policies --network <id>", "list network policies"),
-    ("networks policy-create --network <id> --direction <in|out> --action <allow|deny>", "create a network policy"),
+    (
+        "networks policy-create --network <id> --direction <in|out> --action <allow|deny>",
+        "create a network policy",
+    ),
     ("networks members --network <id>", "list network members"),
-    ("networks member-add --network <id> --workload <id>", "add workload to network"),
-    ("networks member-remove --network <id> --workload <id>", "remove workload from network"),
+    (
+        "networks member-add --network <id> --workload <id>",
+        "add workload to network",
+    ),
+    (
+        "networks member-remove --network <id> --workload <id>",
+        "remove workload from network",
+    ),
     ("tenant info", "show organization details"),
     ("tenant users", "list users in the organization"),
     ("tenant user-get <id>", "show user details"),
-    ("tenant user-create <username> <password> --role <role-id>", "create a new user"),
+    (
+        "tenant user-create <username> <password> --role <role-id>",
+        "create a new user",
+    ),
     ("tenant user-delete <id>", "delete a user"),
     ("tenant roles", "list available roles"),
-    ("tenant set-role --user <id> --role <role-id>", "assign a role to a user"),
+    (
+        "tenant set-role --user <id> --role <role-id>",
+        "assign a role to a user",
+    ),
     ("vault list <resource-group>", "list key vaults"),
     ("vault create <resource-group> <name>", "create a key vault"),
     ("vault get <resource-group> <vault>", "show vault details"),
@@ -129,11 +171,17 @@ const COMMANDS: &[(&str, &str)] = &[
         "revoke access",
     ),
     ("ssh connect <node>", "open ssh session to a cluster node"),
-    ("ssh enable [--hours <n> | --unlimited]", "allow ssh access on all nodes"),
+    (
+        "ssh enable [--hours <n> | --unlimited]",
+        "allow ssh access on all nodes",
+    ),
     ("ssh disable", "close ssh access on all nodes"),
     ("ssh status", "show whether ssh access is open"),
     ("rg list", "list all resource groups"),
-    ("connect rg <name> [--refresh] [--down]", "join the private network of a resource group over wireguard"),
+    (
+        "connect rg <name> [--refresh] [--down]",
+        "join the private network of a resource group over wireguard",
+    ),
     ("clear", "clear the terminal screen"),
     ("help", "show available commands"),
     ("exit", "exit the shell"),
@@ -357,10 +405,7 @@ fn print_help() {
 }
 
 fn parse_flag<'a>(parts: &[&'a str], flag: &str) -> Option<&'a str> {
-    parts
-        .windows(2)
-        .find(|w| w[0] == flag)
-        .map(|w| w[1])
+    parts.windows(2).find(|w| w[0] == flag).map(|w| w[1])
 }
 
 fn parse_text(parts: &[&str], flag: &str) -> Option<String> {
@@ -520,7 +565,10 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
             crate::volumes::run(VolumeCommands::Detach { id: id.to_string() }).await?
         }
         ["volumes", "snapshots", "--volume", vid] => {
-            crate::volumes::run(VolumeCommands::Snapshots { volume: vid.to_string() }).await?
+            crate::volumes::run(VolumeCommands::Snapshots {
+                volume: vid.to_string(),
+            })
+            .await?
         }
         ["volumes", "snapshot-create", "--volume", vid, "--name", name] => {
             crate::volumes::run(VolumeCommands::SnapshotCreate {
@@ -554,14 +602,20 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         ["nodes", "list"] => crate::nodes::run(NodeCommands::List).await?,
-        ["nodes", "get", id] => {
-            crate::nodes::run(NodeCommands::Get { id: id.to_string() }).await?
-        }
+        ["nodes", "get", id] => crate::nodes::run(NodeCommands::Get { id: id.to_string() }).await?,
         ["nodes", "join-token"] => {
-            crate::nodes::run(NodeCommands::JoinToken { role: "worker".to_string(), ttl: 1 }).await?
+            crate::nodes::run(NodeCommands::JoinToken {
+                role: "worker".to_string(),
+                ttl: 1,
+            })
+            .await?
         }
         ["nodes", "join-token", role @ ("worker" | "master")] => {
-            crate::nodes::run(NodeCommands::JoinToken { role: role.to_string(), ttl: 1 }).await?
+            crate::nodes::run(NodeCommands::JoinToken {
+                role: role.to_string(),
+                ttl: 1,
+            })
+            .await?
         }
         ["nodes", "cordon", id] => {
             crate::nodes::run(NodeCommands::Cordon { id: id.to_string() }).await?
@@ -575,37 +629,38 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
         ["nodes", "remove", id] => {
             crate::nodes::run(NodeCommands::Remove { id: id.to_string() }).await?
         }
-        ["nodes", "metrics"] => {
-            crate::nodes::run(NodeCommands::Metrics { watch: false }).await?
-        }
+        ["nodes", "metrics"] => crate::nodes::run(NodeCommands::Metrics { watch: false }).await?,
         ["nodes", "metrics", "--watch"] => {
             crate::nodes::run(NodeCommands::Metrics { watch: true }).await?
         }
         ["nodes", "agent-metrics", id] => {
-            crate::nodes::run(NodeCommands::AgentMetrics { id: id.to_string(), watch: false }).await?
+            crate::nodes::run(NodeCommands::AgentMetrics {
+                id: id.to_string(),
+                watch: false,
+            })
+            .await?
         }
         ["nodes", "agent-metrics", id, "--watch"] => {
-            crate::nodes::run(NodeCommands::AgentMetrics { id: id.to_string(), watch: true }).await?
+            crate::nodes::run(NodeCommands::AgentMetrics {
+                id: id.to_string(),
+                watch: true,
+            })
+            .await?
         }
 
-        ["system", "stats"] => {
-            crate::system::run(SystemCommands::Stats { watch: false }).await?
-        }
+        ["system", "stats"] => crate::system::run(SystemCommands::Stats { watch: false }).await?,
         ["system", "stats", "--watch"] => {
             crate::system::run(SystemCommands::Stats { watch: true }).await?
         }
         ["system", "update", version] => {
-            crate::system::run(SystemCommands::Update { version: version.to_string() }).await?
+            crate::system::run(SystemCommands::Update {
+                version: version.to_string(),
+            })
+            .await?
         }
-        ["system", "update-watch"] => {
-            crate::system::run(SystemCommands::UpdateWatch).await?
-        }
-        ["system", "update-pause"] => {
-            crate::system::run(SystemCommands::UpdatePause).await?
-        }
-        ["system", "update-resume"] => {
-            crate::system::run(SystemCommands::UpdateResume).await?
-        }
+        ["system", "update-watch"] => crate::system::run(SystemCommands::UpdateWatch).await?,
+        ["system", "update-pause"] => crate::system::run(SystemCommands::UpdatePause).await?,
+        ["system", "update-resume"] => crate::system::run(SystemCommands::UpdateResume).await?,
         ["system", "check-update"] => {
             crate::system::run(SystemCommands::CheckUpdate { pre: false }).await?
         }
@@ -614,10 +669,18 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         ["workloads", "metrics", id] => {
-            crate::workloads::run(WorkloadCommands::Metrics { id: id.to_string(), watch: false }).await?
+            crate::workloads::run(WorkloadCommands::Metrics {
+                id: id.to_string(),
+                watch: false,
+            })
+            .await?
         }
         ["workloads", "metrics", id, "--watch"] => {
-            crate::workloads::run(WorkloadCommands::Metrics { id: id.to_string(), watch: true }).await?
+            crate::workloads::run(WorkloadCommands::Metrics {
+                id: id.to_string(),
+                watch: true,
+            })
+            .await?
         }
         ["workloads", "list"] => crate::workloads::run(WorkloadCommands::List).await?,
         ["workloads", "create", name, image] => {
@@ -753,15 +816,26 @@ async fn dispatch(parts: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
         }
         parts if parts.first() == Some(&"networks") && parts.get(1) == Some(&"policy-create") => {
             let network = parse_flag(parts, "--network").unwrap_or("").to_string();
-            let direction = parse_flag(parts, "--direction").unwrap_or("ingress").to_string();
+            let direction = parse_flag(parts, "--direction")
+                .unwrap_or("ingress")
+                .to_string();
             let action = parse_flag(parts, "--action").unwrap_or("allow").to_string();
-            let priority = parse_flag(parts, "--priority").and_then(|v| v.parse().ok()).unwrap_or(100);
+            let priority = parse_flag(parts, "--priority")
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(100);
             let source = parse_flag(parts, "--source").map(|s| s.to_string());
             let destination = parse_flag(parts, "--destination").map(|s| s.to_string());
             let port = parse_flag(parts, "--port").and_then(|v| v.parse().ok());
             let protocol = parse_flag(parts, "--protocol").map(|s| s.to_string());
             crate::networks::run(NetworkCommands::PolicyCreate {
-                network, direction, action, priority, source, destination, port, protocol,
+                network,
+                direction,
+                action,
+                priority,
+                source,
+                destination,
+                port,
+                protocol,
             })
             .await?
         }

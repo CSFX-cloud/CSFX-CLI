@@ -23,7 +23,9 @@ pub async fn find_group(name: &str) -> Result<Group, Box<dyn std::error::Error>>
     groups
         .into_iter()
         .find(|group| group.name.eq_ignore_ascii_case(name) || group.id == name)
-        .ok_or_else(|| Box::<dyn std::error::Error>::from(format!("resource group not found name={}", name)))
+        .ok_or_else(|| {
+            Box::<dyn std::error::Error>::from(format!("resource group not found name={}", name))
+        })
 }
 
 pub async fn platform_zone() -> Result<String, Box<dyn std::error::Error>> {
@@ -45,7 +47,10 @@ mod tests {
 
     #[test]
     fn dns_runs_on_the_second_host_of_the_group() {
-        assert_eq!(dns_address("10.20.0.0/24"), Some("10.20.0.2".parse().unwrap()));
+        assert_eq!(
+            dns_address("10.20.0.0/24"),
+            Some("10.20.0.2".parse().unwrap())
+        );
     }
 
     #[test]

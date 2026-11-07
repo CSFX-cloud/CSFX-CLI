@@ -7,7 +7,10 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    Command::new("sudo").args(args).stderr(Stdio::piped()).output()
+    Command::new("sudo")
+        .args(args)
+        .stderr(Stdio::piped())
+        .output()
 }
 
 pub fn run<I, S>(args: I) -> Result<(), Box<dyn std::error::Error>>
@@ -19,7 +22,11 @@ where
     if output.status.success() {
         return Ok(());
     }
-    Err(format!("privileged command failed: {}", String::from_utf8_lossy(&output.stderr).trim()).into())
+    Err(format!(
+        "privileged command failed: {}",
+        String::from_utf8_lossy(&output.stderr).trim()
+    )
+    .into())
 }
 
 pub fn write_file(path: &str, content: &str) -> Result<(), Box<dyn std::error::Error>> {
