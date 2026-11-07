@@ -11,8 +11,6 @@ use tokio::time::sleep;
 struct UpdateStatus {
     current_version: String,
     desired_version: Option<String>,
-    available_flake_rev: Option<String>,
-    desired_flake_rev: Option<String>,
     build_status: Option<String>,
     last_result: Option<String>,
     paused: bool,
@@ -108,61 +106,27 @@ async fn fetch_status(
 fn build_steps(status: &UpdateStatus, target_version: Option<&str>) -> Vec<Step> {
     let last = status.last_result.as_deref();
     let build = status.build_status.as_deref();
-    let globally_failed = last == Some("failed");
+    let failed = last == Some("failed") || build == Some("failed");
+    let rolled_back = last == Some("rolled_back");
 
-    let phase1 = if status.desired_version.is_some() {
-        if status.available_flake_rev.is_some() {
-            Phase::Done
-        } else if globally_failed || build == Some("failed") {
-            Phase::Failed
-        } else {
-            Phase::Active
-        }
+    let requested = if status.desired_version.is_some() {
+        Phase::Done
     } else {
         Phase::Pending
     };
 
-    let phase2 = match phase1 {
-        Phase::Done => {
-            if status.available_flake_rev == status.desired_flake_rev {
-                Phase::Done
-            } else if globally_failed {
-                Phase::Failed
-            } else {
-                Phase::Active
-            }
-        }
-        Phase::Active => Phase::Pending,
+    let activation = match (requested, build) {
+        (Phase::Done, Some("building")) => Phase::Active,
+        (Phase::Done, _) if last == Some("success") => Phase::Done,
+        (Phase::Done, _) if failed || rolled_back => Phase::Failed,
         _ => Phase::Pending,
     };
 
-    let phase3 = match phase2 {
-        Phase::Done => match build {
-            Some("building") => Phase::Active,
-            Some("ready") | Some("failed") if last == Some("success") => Phase::Done,
-            Some("failed") => Phase::Failed,
-            _ => Phase::Pending,
-        },
+    let verification = match (activation, last) {
+        (Phase::Done, Some("success")) => Phase::Done,
+        (Phase::Failed, _) if rolled_back => Phase::Failed,
         _ => Phase::Pending,
     };
-
-    let phase4 = match phase3 {
-        Phase::Done => {
-            if last == Some("success") {
-                Phase::Done
-            } else {
-                Phase::Pending
-            }
-        }
-        Phase::Active => Phase::Pending,
-        Phase::Failed => Phase::Pending,
-        Phase::Pending => Phase::Pending,
-    };
-
-    let rev_short = status
-        .available_flake_rev
-        .as_deref()
-        .map(|r| format!("sha:{}", &r[..8.min(r.len())]));
 
     let target = target_version
         .or(status.desired_version.as_deref())
@@ -170,28 +134,19 @@ fn build_steps(status: &UpdateStatus, target_version: Option<&str>) -> Vec<Step>
 
     vec![
         Step {
-            label: "Resolving version to flake rev",
-            phase: phase1,
-            detail: rev_short,
-        },
-        Step {
-            label: "Mirroring repository",
-            phase: phase2,
+            label: "Requesting signed release manifest",
+            phase: requested,
             detail: None,
         },
         Step {
-            label: "Building NixOS closure",
-            phase: phase3,
+            label: "Downloading and activating system closure",
+            phase: activation,
             detail: None,
         },
         Step {
-            label: "Applying (nixos-rebuild switch)",
-            phase: phase4,
-            detail: status
-                .last_result
-                .as_deref()
-                .filter(|_| phase4 == Phase::Done)
-                .map(|_| format!("-> {}", target)),
+            label: "Verifying health",
+            phase: verification,
+            detail: Some(format!("-> {}", target)).filter(|_| verification == Phase::Done),
         },
     ]
 }

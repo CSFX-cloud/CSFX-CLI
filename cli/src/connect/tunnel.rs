@@ -38,7 +38,12 @@ fn find_tool(name: &str) -> Result<PathBuf, Failure> {
     std::env::split_paths(&search)
         .map(|directory| directory.join(name))
         .find(|candidate| candidate.is_file())
-        .ok_or_else(|| Failure::from(format!("{} not found, install it with: {}", name, INSTALL_HINT)))
+        .ok_or_else(|| {
+            Failure::from(format!(
+                "{} not found, install it with: {}",
+                name, INSTALL_HINT
+            ))
+        })
 }
 
 fn without_dns(config: &str) -> String {
@@ -66,12 +71,20 @@ async fn ensure_config(group: &Group, refresh: bool) -> Result<PathBuf, Failure>
         return Ok(path);
     }
     let (client, server, token) = auth()?;
-    let url = format!("{}/resource-groups/{}/vpn-config", base_url(&server), group.id);
+    let url = format!(
+        "{}/resource-groups/{}/vpn-config",
+        base_url(&server),
+        group.id
+    );
     let spinner = display::spinner("requesting wireguard configuration...");
     let config = get_text(&client, &url, &token).await;
     spinner.finish_and_clear();
     let config = config?;
-    let scoped = if cfg!(target_os = "macos") { without_dns(&config) } else { config };
+    let scoped = if cfg!(target_os = "macos") {
+        without_dns(&config)
+    } else {
+        config
+    };
     write_private(&path, &scoped)?;
     Ok(path)
 }
@@ -86,7 +99,12 @@ fn wg_quick_command(tool: &Path, action: &str, config: &Path) -> Vec<String> {
     ]
 }
 
-fn switch_interface(tool: &Path, action: &str, config: &Path, tolerated: &str) -> Result<(), Failure> {
+fn switch_interface(
+    tool: &Path,
+    action: &str,
+    config: &Path,
+    tolerated: &str,
+) -> Result<(), Failure> {
     let output = privileged::output(wg_quick_command(tool, action, config))?;
     if output.status.success() {
         return Ok(());
@@ -130,7 +148,10 @@ fn print_summary(group: &Group, zone: &str) {
         display::kv("DNS", &address.to_string());
     }
     display::kv("Domains", &resolver::domains(group, zone).join(", "));
-    display::info(&format!("leave with: csfx connect rg {} --down", group.name));
+    display::info(&format!(
+        "leave with: csfx connect rg {} --down",
+        group.name
+    ));
 }
 
 #[cfg(test)]
@@ -140,6 +161,9 @@ mod tests {
     #[test]
     fn dns_line_is_removed_and_everything_else_kept() {
         let config = "[Interface]\nPrivateKey = k\nDNS = 10.20.0.2, svc.x.internal\nAddress = 10.20.0.254/32\n";
-        assert_eq!(without_dns(config), "[Interface]\nPrivateKey = k\nAddress = 10.20.0.254/32\n");
+        assert_eq!(
+            without_dns(config),
+            "[Interface]\nPrivateKey = k\nAddress = 10.20.0.254/32\n"
+        );
     }
 }

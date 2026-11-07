@@ -10,7 +10,10 @@ pub enum ConnectCommands {
     #[command(about = "Join the private WireGuard network of a resource group")]
     Rg {
         name: String,
-        #[arg(long, help = "Request a new WireGuard configuration instead of reusing the stored one")]
+        #[arg(
+            long,
+            help = "Request a new WireGuard configuration instead of reusing the stored one"
+        )]
         refresh: bool,
         #[arg(long, help = "Leave the network again")]
         down: bool,
