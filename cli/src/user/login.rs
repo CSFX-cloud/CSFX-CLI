@@ -35,6 +35,11 @@ struct ChangePasswordRequest {
     new_password: String,
 }
 
+#[derive(Deserialize)]
+struct ChangePasswordResponse {
+    token: String,
+}
+
 pub(crate) async fn get_public_key(
     server: &str,
 ) -> Result<RsaPublicKey, Box<dyn std::error::Error>> {
@@ -86,7 +91,7 @@ async fn change_password(
     token: &str,
     public_key: &RsaPublicKey,
     old_password_plain: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn std::error::Error>> {
     display::warn("password change required");
     let new_password = prompt_new_password()?;
     let encrypted_old = encrypt_password(old_password_plain, public_key)?;
@@ -109,7 +114,8 @@ async fn change_password(
 
     if response.status().is_success() {
         display::success("password changed");
-        Ok(())
+        let changed: ChangePasswordResponse = serde_json::from_str(&response.text().await?)?;
+        Ok(changed.token)
     } else {
         let status = response.status();
         let body = response.text().await?;
@@ -214,7 +220,9 @@ pub async fn login() -> Result<(), Box<dyn std::error::Error>> {
         );
 
         if login_response.force_password_change {
-            change_password(&server, &login_response.token, &public_key, &password).await?;
+            config.token =
+                Some(change_password(&server, &login_response.token, &public_key, &password).await?);
+            save_config(&config)?;
         }
     } else {
         let status = response.status();
