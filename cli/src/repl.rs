@@ -964,12 +964,9 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut rl: Editor<CsfHelper, _> = Editor::with_config(config)?;
     rl.set_helper(Some(CsfHelper));
 
-    let history_path = dirs::home_dir().map(|mut p| {
-        p.push(".csf");
-        let _ = std::fs::create_dir_all(&p);
-        p.push("history");
-        p
-    });
+    let history_path = crate::config::ensure_private_dir()
+        .ok()
+        .map(|_| crate::config::get_history_path());
 
     if let Some(ref path) = history_path {
         let _ = rl.load_history(path);
@@ -1015,6 +1012,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     if let Some(ref path) = history_path {
         let _ = rl.save_history(path);
+        let _ = crate::config::ensure_private_dir();
     }
 
     Ok(())

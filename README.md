@@ -52,7 +52,7 @@ csf nodes metrics
 
 ## Configuration
 
-Config is stored at `~/.csf/config.json`:
+Config is stored at `~/.csfx/config.json`:
 
 ```json
 {

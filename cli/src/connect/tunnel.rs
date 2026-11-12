@@ -1,12 +1,10 @@
 use super::privileged;
 use super::resolve::{dns_address, platform_zone, Group};
 use super::resolver;
-use crate::config::get_config_path;
+use crate::config::{config_dir, create_private_dir, ensure_private_dir, write_private};
 use crate::display;
 use crate::http::{auth, base_url, get_text};
-use std::fs::{self, OpenOptions};
-use std::io::Write;
-use std::os::unix::fs::OpenOptionsExt;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 const WG_QUICK: &str = "wg-quick";
@@ -16,7 +14,6 @@ const INSTALL_HINT: &str = if cfg!(target_os = "macos") {
     "apt install wireguard-tools"
 };
 const INTERFACE_ID_LENGTH: usize = 8;
-const CONFIG_MODE: u32 = 0o600;
 
 type Failure = Box<dyn std::error::Error>;
 
@@ -26,10 +23,9 @@ fn interface_name(group: &Group) -> String {
 }
 
 fn config_path(group: &Group) -> Result<PathBuf, Failure> {
-    let mut directory = get_config_path();
-    directory.pop();
-    directory.push("vpn");
-    fs::create_dir_all(&directory)?;
+    ensure_private_dir()?;
+    let directory = config_dir().join("vpn");
+    create_private_dir(&directory)?;
     Ok(directory.join(format!("{}.conf", interface_name(group))))
 }
 
@@ -115,17 +111,6 @@ fn without_dns(config: &str) -> String {
         .collect()
 }
 
-fn write_private(path: &Path, content: &str) -> Result<(), Failure> {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .mode(CONFIG_MODE)
-        .open(path)?;
-    file.write_all(content.as_bytes())?;
-    Ok(())
-}
-
 async fn ensure_config(group: &Group, refresh: bool) -> Result<PathBuf, Failure> {
     let path = config_path(group)?;
     if path.exists() && !refresh {
@@ -183,13 +168,13 @@ pub async fn up(group: &Group, refresh: bool) -> Result<(), Failure> {
     let tool = find_tool(WG_QUICK)?;
     let config = ensure_config(group, refresh).await?;
     let zone = platform_zone().await?;
+    resolver::domains(group, &zone)?;
     if refresh {
         switch_interface(&tool, "down", &config, "is not a WireGuard interface")?;
     }
     switch_interface(&tool, "up", &config, "already exists")?;
     resolver::install(group, &zone)?;
-    print_summary(group, &zone);
-    Ok(())
+    print_summary(group, &zone)
 }
 
 pub async fn down(group: &Group) -> Result<(), Failure> {
@@ -199,24 +184,26 @@ pub async fn down(group: &Group) -> Result<(), Failure> {
         verified_cache(&config)?;
     }
     let zone = platform_zone().await?;
+    resolver::domains(group, &zone)?;
     switch_interface(&tool, "down", &config, "is not a WireGuard interface")?;
     resolver::remove(group, &zone)?;
     display::success(&format!("disconnected resource group={}", group.name));
     Ok(())
 }
 
-fn print_summary(group: &Group, zone: &str) {
+fn print_summary(group: &Group, zone: &str) -> Result<(), Failure> {
     display::success(&format!("connected resource group={}", group.name));
     display::kv("Interface", &interface_name(group));
     display::kv("Network", &group.internal_cidr);
     if let Some(address) = dns_address(&group.internal_cidr) {
         display::kv("DNS", &address.to_string());
     }
-    display::kv("Domains", &resolver::domains(group, zone).join(", "));
+    display::kv("Domains", &resolver::domains(group, zone)?.join(", "));
     display::info(&format!(
         "leave with: csfx connect rg {} --down",
         group.name
     ));
+    Ok(())
 }
 
 #[cfg(test)]
