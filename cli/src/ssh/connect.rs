@@ -12,11 +12,16 @@ use uuid::Uuid;
 
 #[derive(Deserialize)]
 struct AgentInfo {
-    id: String,
     name: String,
     hostname: String,
     ip_address: Option<String>,
     status: String,
+    ssh_host_key: Option<String>,
+}
+
+struct Target {
+    address: String,
+    host_key: String,
 }
 
 #[derive(Deserialize)]
@@ -25,6 +30,7 @@ struct SshKeyRecord {
 }
 
 const SSH_LOGIN_USER: &str = "csfx";
+const DEFAULT_SSH_PORT: u16 = 22;
 
 pub async fn run(node: String, port: u16) -> Result<(), Box<dyn std::error::Error>> {
     let (client, server, token) = auth()?;
@@ -34,10 +40,14 @@ pub async fn run(node: String, port: u16) -> Result<(), Box<dyn std::error::Erro
         return Err("ssh access is disabled, enable it with: csfx ssh enable".into());
     }
 
-    let target_ip = resolve_node(&client, &base, &token, &node).await?;
+    let target = resolve_node(&client, &base, &token, &node).await?;
+    let target_ip = target.address.as_str();
     let username = SSH_LOGIN_USER;
 
     let tempdir = TempDir::new()?;
+    let known_hosts_path = tempdir.path().join("known_hosts");
+    let known_hosts = known_hosts_line(&target.address, port, &target.host_key)?;
+    std::fs::write(&known_hosts_path, known_hosts)?;
     let private_key_path = tempdir.path().join("id_ed25519");
     let public_key_path = tempdir.path().join("id_ed25519.pub");
 
@@ -64,9 +74,13 @@ pub async fn run(node: String, port: u16) -> Result<(), Box<dyn std::error::Erro
         .arg("-p")
         .arg(port.to_string())
         .arg("-o")
-        .arg("StrictHostKeyChecking=no")
+        .arg("StrictHostKeyChecking=yes")
         .arg("-o")
-        .arg("UserKnownHostsFile=/dev/null")
+        .arg(format!("UserKnownHostsFile={}", known_hosts_path.display()))
+        .arg("-o")
+        .arg("GlobalKnownHostsFile=/dev/null")
+        .arg("-o")
+        .arg("HostKeyAlgorithms=ssh-ed25519")
         .arg("-o")
         .arg("LogLevel=ERROR")
         .arg(format!("{}@{}", username, target_ip))
@@ -94,7 +108,7 @@ async fn resolve_node(
     base: &str,
     token: &str,
     node: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<Target, Box<dyn std::error::Error>> {
     let pb = display::spinner("resolving node...");
 
     let agent = if Uuid::parse_str(node).is_ok() {
@@ -122,11 +136,35 @@ async fn resolve_node(
         ));
     }
 
-    agent
+    let host_key = agent
+        .ssh_host_key
+        .filter(|key| !key.is_empty())
+        .ok_or("node has not reported an ssh host key, refusing to connect")?;
+    let address = agent
         .ip_address
         .filter(|ip| !ip.is_empty())
-        .or_else(|| Some(agent.hostname.clone()))
-        .ok_or_else(|| "node has no reachable address".into())
+        .unwrap_or_else(|| agent.hostname.clone());
+    Ok(Target { address, host_key })
+}
+
+fn known_hosts_line(
+    host: &str,
+    port: u16,
+    key: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let mut fields = key.split_whitespace();
+    let (Some(key_type), Some(body), None) = (fields.next(), fields.next(), fields.next()) else {
+        return Err("node reported a malformed ssh host key".into());
+    };
+    if key_type != "ssh-ed25519" || host.chars().any(|c| c.is_whitespace() || c == ',') {
+        return Err("node reported an unsupported ssh host key".into());
+    }
+    let pattern = if port == DEFAULT_SSH_PORT {
+        host.to_string()
+    } else {
+        format!("[{}]:{}", host, port)
+    };
+    Ok(format!("{} {} {}\n", pattern, key_type, body))
 }
 
 async fn register_key(
@@ -168,4 +206,36 @@ async fn delete_key(client: &reqwest::Client, base: &str, token: &str, key_id: &
         .header("Authorization", format!("Bearer {}", token))
         .send()
         .await;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::known_hosts_line;
+
+    #[test]
+    fn known_hosts_pin_the_reported_key_to_the_address() {
+        assert_eq!(
+            known_hosts_line("10.0.0.5", 22, "ssh-ed25519 AAAAC3").unwrap(),
+            "10.0.0.5 ssh-ed25519 AAAAC3\n"
+        );
+        assert_eq!(
+            known_hosts_line("10.0.0.5", 2222, "ssh-ed25519 AAAAC3").unwrap(),
+            "[10.0.0.5]:2222 ssh-ed25519 AAAAC3\n"
+        );
+    }
+
+    #[test]
+    fn malformed_or_unsupported_keys_and_hosts_are_refused() {
+        for key in [
+            "",
+            "ssh-ed25519",
+            "ssh-rsa AAAA",
+            "ssh-ed25519 AAAA extra",
+            "ssh-ed25519 AAAA\n@revoked * ssh-ed25519 BBBB",
+        ] {
+            assert!(known_hosts_line("10.0.0.5", 22, key).is_err(), "{key:?}");
+        }
+        assert!(known_hosts_line("a b", 22, "ssh-ed25519 AAAA").is_err());
+        assert!(known_hosts_line("a,b", 22, "ssh-ed25519 AAAA").is_err());
+    }
 }
