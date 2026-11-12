@@ -1,7 +1,6 @@
 use crate::config::load_config;
 use crate::display::{self, kv, kv_colored, section};
 use colored::Color;
-use reqwest;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -25,7 +24,7 @@ pub async fn status() -> Result<(), Box<dyn std::error::Error>> {
                     kv_colored("Status", "authenticated", Color::Green);
 
                     let pb = display::spinner("fetching user info...");
-                    let client = reqwest::Client::new();
+                    let client = crate::http::build_client()?;
                     let url = format!("{}/api/user/me", cfg.server.trim_end_matches('/'));
 
                     let response = client

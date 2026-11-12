@@ -8,6 +8,8 @@ pub struct Config {
     pub token: Option<String>,
     pub compose_dir: Option<String>,
     pub ghcr_org: Option<String>,
+    #[serde(default)]
+    pub ca_pem: Option<String>,
 }
 
 pub fn get_config_path() -> PathBuf {

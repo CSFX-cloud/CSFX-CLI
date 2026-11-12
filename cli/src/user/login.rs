@@ -43,7 +43,7 @@ struct ChangePasswordResponse {
 pub(crate) async fn get_public_key(
     server: &str,
 ) -> Result<RsaPublicKey, Box<dyn std::error::Error>> {
-    let client = crate::http::build_client();
+    let client = crate::http::build_client()?;
     let url = format!("{}/api/public-key", server.trim_end_matches('/'));
 
     let response = client
@@ -97,7 +97,7 @@ async fn change_password(
     let encrypted_old = encrypt_password(old_password_plain, public_key)?;
     let encrypted_new = encrypt_password(&new_password, public_key)?;
 
-    let client = crate::http::build_client();
+    let client = crate::http::build_client()?;
     let url = format!("{}/api/change-password", server.trim_end_matches('/'));
 
     let response = client
@@ -124,21 +124,24 @@ async fn change_password(
 }
 
 pub async fn login() -> Result<(), Box<dyn std::error::Error>> {
+    let current = load_config();
+    let server: String = match current.as_ref().filter(|config| !config.server.is_empty()) {
+        None => Input::new().with_prompt("server URL").interact_text()?,
+        Some(config) => Input::new()
+            .with_prompt("server URL")
+            .default(config.server.clone())
+            .interact_text()?,
+    };
+
+    crate::tls::ensure_pinned(&server).await?;
+
     let mut config = load_config().unwrap_or_else(|| Config {
         server: String::new(),
         token: None,
         compose_dir: None,
         ghcr_org: None,
+        ca_pem: None,
     });
-
-    let server: String = if config.server.is_empty() {
-        Input::new().with_prompt("server URL").interact_text()?
-    } else {
-        Input::new()
-            .with_prompt("server URL")
-            .default(config.server.clone())
-            .interact_text()?
-    };
 
     let pb = display::spinner("connecting to server...");
     let public_key = get_public_key(&server).await;
@@ -151,7 +154,7 @@ pub async fn login() -> Result<(), Box<dyn std::error::Error>> {
 
     let pb = display::spinner("authenticating...");
 
-    let client = crate::http::build_client();
+    let client = crate::http::build_client()?;
     let login_url = format!("{}/api/login", server.trim_end_matches('/'));
 
     let response = client
@@ -220,8 +223,9 @@ pub async fn login() -> Result<(), Box<dyn std::error::Error>> {
         );
 
         if login_response.force_password_change {
-            config.token =
-                Some(change_password(&server, &login_response.token, &public_key, &password).await?);
+            config.token = Some(
+                change_password(&server, &login_response.token, &public_key, &password).await?,
+            );
             save_config(&config)?;
         }
     } else {
