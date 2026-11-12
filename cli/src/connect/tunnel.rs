@@ -1,12 +1,10 @@
 use super::privileged;
 use super::resolve::{dns_address, platform_zone, Group};
 use super::resolver;
-use crate::config::get_config_path;
+use crate::config::{config_dir, create_private_dir, ensure_private_dir, write_private};
 use crate::display;
 use crate::http::{auth, base_url, get_text};
-use std::fs::{self, OpenOptions};
-use std::io::Write;
-use std::os::unix::fs::OpenOptionsExt;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 const WG_QUICK: &str = "wg-quick";
@@ -16,7 +14,6 @@ const INSTALL_HINT: &str = if cfg!(target_os = "macos") {
     "apt install wireguard-tools"
 };
 const INTERFACE_ID_LENGTH: usize = 8;
-const CONFIG_MODE: u32 = 0o600;
 
 type Failure = Box<dyn std::error::Error>;
 
@@ -26,10 +23,9 @@ fn interface_name(group: &Group) -> String {
 }
 
 fn config_path(group: &Group) -> Result<PathBuf, Failure> {
-    let mut directory = get_config_path();
-    directory.pop();
-    directory.push("vpn");
-    fs::create_dir_all(&directory)?;
+    ensure_private_dir()?;
+    let directory = config_dir().join("vpn");
+    create_private_dir(&directory)?;
     Ok(directory.join(format!("{}.conf", interface_name(group))))
 }
 
@@ -113,17 +109,6 @@ fn without_dns(config: &str) -> String {
         .filter(|line| !line.trim_start().starts_with("DNS"))
         .map(|line| format!("{}\n", line))
         .collect()
-}
-
-fn write_private(path: &Path, content: &str) -> Result<(), Failure> {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .mode(CONFIG_MODE)
-        .open(path)?;
-    file.write_all(content.as_bytes())?;
-    Ok(())
 }
 
 async fn ensure_config(group: &Group, refresh: bool) -> Result<PathBuf, Failure> {
