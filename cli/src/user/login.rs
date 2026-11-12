@@ -220,8 +220,9 @@ pub async fn login() -> Result<(), Box<dyn std::error::Error>> {
         );
 
         if login_response.force_password_change {
-            config.token =
-                Some(change_password(&server, &login_response.token, &public_key, &password).await?);
+            config.token = Some(
+                change_password(&server, &login_response.token, &public_key, &password).await?,
+            );
             save_config(&config)?;
         }
     } else {
