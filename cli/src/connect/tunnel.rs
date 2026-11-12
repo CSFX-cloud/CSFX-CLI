@@ -168,13 +168,13 @@ pub async fn up(group: &Group, refresh: bool) -> Result<(), Failure> {
     let tool = find_tool(WG_QUICK)?;
     let config = ensure_config(group, refresh).await?;
     let zone = platform_zone().await?;
+    resolver::domains(group, &zone)?;
     if refresh {
         switch_interface(&tool, "down", &config, "is not a WireGuard interface")?;
     }
     switch_interface(&tool, "up", &config, "already exists")?;
     resolver::install(group, &zone)?;
-    print_summary(group, &zone);
-    Ok(())
+    print_summary(group, &zone)
 }
 
 pub async fn down(group: &Group) -> Result<(), Failure> {
@@ -184,24 +184,26 @@ pub async fn down(group: &Group) -> Result<(), Failure> {
         verified_cache(&config)?;
     }
     let zone = platform_zone().await?;
+    resolver::domains(group, &zone)?;
     switch_interface(&tool, "down", &config, "is not a WireGuard interface")?;
     resolver::remove(group, &zone)?;
     display::success(&format!("disconnected resource group={}", group.name));
     Ok(())
 }
 
-fn print_summary(group: &Group, zone: &str) {
+fn print_summary(group: &Group, zone: &str) -> Result<(), Failure> {
     display::success(&format!("connected resource group={}", group.name));
     display::kv("Interface", &interface_name(group));
     display::kv("Network", &group.internal_cidr);
     if let Some(address) = dns_address(&group.internal_cidr) {
         display::kv("DNS", &address.to_string());
     }
-    display::kv("Domains", &resolver::domains(group, zone).join(", "));
+    display::kv("Domains", &resolver::domains(group, zone)?.join(", "));
     display::info(&format!(
         "leave with: csfx connect rg {} --down",
         group.name
     ));
+    Ok(())
 }
 
 #[cfg(test)]
