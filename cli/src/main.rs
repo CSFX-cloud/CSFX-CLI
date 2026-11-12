@@ -15,6 +15,7 @@ mod repl;
 mod ssh;
 mod system;
 mod tenant;
+mod tls;
 mod user;
 mod vault;
 mod volumes;
@@ -28,6 +29,8 @@ use clap::{Parser, Subcommand};
 #[command(version)]
 #[command(disable_help_subcommand = true)]
 struct Cli {
+    #[arg(long, global = true, help = "Skip TLS verification (unsafe)")]
+    insecure: bool,
     #[command(subcommand)]
     command: Option<Commands>,
 }
@@ -89,6 +92,7 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
+    http::set_insecure(cli.insecure);
 
     match cli.command {
         None => {

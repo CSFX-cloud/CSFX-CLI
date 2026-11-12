@@ -45,7 +45,7 @@ fn prompt_secret(label: &str, minimum: usize) -> Result<String, Box<dyn std::err
 
 async fn fetch_status(server: &str) -> Result<SetupStatus, Box<dyn std::error::Error>> {
     let url = format!("{}/api/setup/status", server);
-    let response = crate::http::build_client().get(&url).send().await?;
+    let response = crate::http::build_client()?.get(&url).send().await?;
     if !response.status().is_success() {
         return Err(format!("setup status unavailable: {}", response.status()).into());
     }
@@ -57,7 +57,7 @@ async fn submit(
     request: &SetupRequest,
 ) -> Result<SetupResponse, Box<dyn std::error::Error>> {
     let url = format!("{}/api/setup", server);
-    let response = crate::http::build_client()
+    let response = crate::http::build_client()?
         .post(&url)
         .json(request)
         .send()
@@ -76,6 +76,7 @@ fn store_session(server: &str, token: &str) -> Result<(), Box<dyn std::error::Er
         token: None,
         compose_dir: None,
         ghcr_org: None,
+        ca_pem: None,
     });
     config.server = server.to_string();
     config.token = Some(token.to_string());
@@ -90,6 +91,8 @@ pub async fn setup(server: Option<String>) -> Result<(), Box<dyn std::error::Err
             .interact_text()?,
     };
     let server = server.trim_end_matches('/').to_string();
+
+    crate::tls::ensure_pinned(&server).await?;
 
     let status = fetch_status(&server).await?;
     if status.state != "setup_required" {
