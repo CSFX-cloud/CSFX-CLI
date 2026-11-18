@@ -177,6 +177,35 @@ const COMMANDS: &[(&str, &str)] = &[
     ),
     ("ssh disable", "close ssh access on all nodes"),
     ("ssh status", "show whether ssh access is open"),
+    (
+        "export config|full [--target <name>] [--wait]",
+        "export the configuration or everything",
+    ),
+    (
+        "export group|workload|volume|bucket <id> [--target <name>] [--wait]",
+        "export one resource",
+    ),
+    ("export list", "list recent exports"),
+    ("export get <id>", "show one export"),
+    (
+        "export restore <id> [--target <name>] [--agent <id>] [--prompt-passphrase] [--yes]",
+        "restore an export",
+    ),
+    (
+        "export download <id> <artifact> --output <file> [--target <name>] [--prompt-passphrase]",
+        "save one decrypted artifact of an export",
+    ),
+    ("export target list", "list export targets"),
+    (
+        "export target add-local <name> <path> [--encrypt] [--default]",
+        "add a target on the gateway host",
+    ),
+    (
+        "export target add-s3 <name> --endpoint <url> --bucket <b> --region <r> --access-key-id <k>",
+        "add an s3 compatible target",
+    ),
+    ("export target remove <name>", "remove a target"),
+    ("export target test <name>", "check that a target works"),
     ("rg list", "list all resource groups"),
     (
         "connect rg <name> [--refresh] [--down]",

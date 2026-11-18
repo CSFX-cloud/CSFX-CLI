@@ -4,6 +4,7 @@ mod connect;
 mod display;
 mod dns;
 mod events;
+mod export;
 mod gateway;
 mod groups;
 mod http;
@@ -85,6 +86,11 @@ enum Commands {
         about = "Join the private network of a resource group over WireGuard"
     )]
     Connect(connect::ConnectCommands),
+    #[command(
+        subcommand,
+        about = "Export and restore platform configuration and tenant data"
+    )]
+    Export(export::ExportCommands),
     #[command(subcommand, about = "List resource groups")]
     Rg(groups::GroupCommands),
 }
@@ -119,6 +125,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Ssh(cmd)) => ssh::run(cmd).await?,
         Some(Commands::Vault(cmd)) => vault::run(cmd).await?,
         Some(Commands::Connect(cmd)) => connect::run(cmd).await?,
+        Some(Commands::Export(cmd)) => export::run(cmd).await?,
         Some(Commands::Rg(cmd)) => groups::run(cmd).await?,
     }
 
